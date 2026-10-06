@@ -1,4 +1,4 @@
-Model SysADLModel ; 
+Model ParkControl ; 
 
 package SysADL.types { 
     value type Int { } 
@@ -11,4 +11,241 @@ package SysADL.types {
 package ParkControl {
 
 
+}
+
+
+Requirement ParkAccessControl ( 1 ) {
+  text = "FR1 - The system shall control visitor entry to and exit from the park."
+
+  Requirement UnlockTurnstileWithValidTicket ( 1.1 ) {
+    text = "FR1.1 - The system shall unlock the entry turnstile only if the identifier is associated with a ticket valid for the current date and time."
+  }
+  Requirement BlockEntryAtCapacity ( 1.2 ) {
+    text = "FR1.2 - The system shall block new entries when park occupancy reaches the configured limit, allowing them again when occupancy drops below 95% of the limit."
+  }
+  Requirement RecordEntryExitAndOccupancy ( 1.3 ) {
+    text = "FR1.3 - The system shall record every entry and exit, keeping a real-time occupancy count."
+  }
+  Requirement AntiPassback ( 1.4 ) {
+    text = "FR1.4 - The system shall prevent the same identifier from being used to enter twice without a recorded exit (anti-passback)."
+  }
+}
+
+Requirement TicketsAndIdentifiers ( 2 ) {
+  text = "FR2 - The system shall manage tickets and the identifiers linked to them."
+
+  Requirement TicketPurchase ( 2.1 ) {
+    text = "FR2.1 - The system shall allow tickets to be purchased through the app and, alternatively, at the dispenser kiosk, with configurable types (daily, half-price, annual pass, VIP), each with its own number of priority queue credits."
+  }
+  Requirement TicketIdentifierBinding ( 2.2 ) {
+    text = "FR2.2 - The system shall bind each ticket to an identifier (passive RFID/NFC wristband or QR code in the app)."
+  }
+  Requirement BirthDateRecord ( 2.3 ) {
+    text = "FR2.3 - The system shall record the visitor's date of birth in their profile, used for purchase restrictions."
+    derive PaymentsAndPurchases.AlcoholBlockForMinors ;
+  }
+  Requirement MinorGuardianLink ( 2.4 ) {
+    text = "FR2.4 - The system shall allow minors' wristbands to be linked to a guardian."
+  }
+  Requirement BlockAndTransferViaDispenser ( 2.5 ) {
+    text = "FR2.5 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the same items listed in FR2.7."
+  }
+  Requirement WristbandDispensing ( 2.6 ) {
+    text = "FR2.6 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.5), binding the wristband to that ticket."
+  }
+  
+  Requirement AssistedWristbandReplacement ( 2.7 ) {
+    text = "FR2.7 - The system shall allow an authenticated attendant to block a lost wristband and encode a new one for the visitor, after confirming their identity through the app or a photo ID, transferring the ticket, remaining priority queue credits, balance, linked card, rented locker, guardian links and in-park presence status (so that anti-passback is not violated)."
+  }
+  Requirement BlockedWristbandRejection ( 2.8 ) {
+    text = "FR2.8 - Turnstiles, gates, lockers and points of sale shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
+    derive TicketsAndIdentifiers.AssistedWristbandReplacement, TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
+  }
+  Requirement ReplacementRecord ( 2.9 ) {
+    text = "FR2.9 - The system shall record every wristband replacement with the responsible attendant, timestamp, old and new identifiers and the transferred items."
+  }
+}
+
+Requirement PriorityQueuesAndAttractionLog ( 3 ) {
+  text = "FR3 - The system shall control priority queues and record visited attractions."
+
+  Requirement CreditsPerTicketType ( 3.1 ) {
+    text = "FR3.1 - Each ticket type shall define a number of priority queue credits per day (e.g., 5), available on the identifier from park entry onwards."
+  }
+  Requirement PriorityGateWithCredit ( 3.2 ) {
+    text = "FR3.2 - The priority queue gate shall allow passage only if the identifier has at least one credit available for the day."
+  }
+  Requirement CreditDebit ( 3.3 ) {
+    text = "FR3.3 - When allowing passage, the system shall debit one priority queue credit."
+  }
+  Requirement DuplicateReadSuppression ( 3.4 ) {
+    text = "FR3.4 - The system shall ignore a new read of the same identifier at the same gate for 1 minute, avoiding double debits."
+    derive PriorityQueuesAndAttractionLog.CreditDebit ;
+  }
+  Requirement CreditExpiration ( 3.5 ) {
+    text = "FR3.5 - Unused credits shall expire at the end of the day."
+  }
+  Requirement RemainingCreditsDisplay ( 3.6 ) {
+    text = "FR3.6 - The system shall display at the gate and in the app how many credits the visitor has left."
+  }
+  Requirement RegularQueueLog ( 3.7 ) {
+    text = "FR3.7 - Where there is a reader in the regular queue, the system shall record the visited attraction without blocking access."
+  }
+  Requirement AttractionHistory ( 3.8 ) {
+    text = "FR3.8 - The system shall show in the app the history of attractions visited during the day, in both regular and priority queues."
+  }
+}
+
+Requirement PaymentsAndPurchases ( 4 ) {
+  text = "FR4 - The system shall manage the digital wallet and wristband payments."
+
+  Requirement BalanceTopUp ( 4.1 ) {
+    text = "FR4.1 - The system shall allow the prepaid wristband balance to be topped up through the app, via Pix, debit or credit."
+  }
+  Requirement CardLinking ( 4.2 ) {
+    text = "FR4.2 - The system shall allow a credit or debit card to be linked through the app, tokenized by the gateway, so that the wristband works as a contactless payment method."
+  }
+  Requirement PointOfSaleCharge ( 4.3 ) {
+    text = "FR4.3 - At the point of sale, the system shall debit the prepaid balance or charge the linked card, refusing the purchase if there is not enough balance or no card authorization."
+  }
+  Requirement AlcoholBlockForMinors ( 4.4 ) {
+    text = "FR4.4 - The system shall block the sale of alcoholic beverages to identifiers of visitors under 18."
+  }
+  Requirement BalanceRefund ( 4.5 ) {
+    text = "FR4.5 - The system shall allow the remaining prepaid balance to be refunded through the app when leaving the park."
+  }
+  Requirement MinorSpendingLimit ( 4.6 ) {
+    text = "FR4.6 - The system shall allow the guardian to set a spending limit for the wristbands of linked minors."
+  }
+}
+
+Requirement Lockers ( 5 ) {
+  text = "FR5 - The system shall manage locker rental and opening."
+
+  Requirement LockerRental ( 5.1 ) {
+    text = "FR5.1 - The system shall allow a locker to be rented through the app (choosing size and area), binding it to the ticket's own wristband and charging the wallet."
+  }
+  Requirement UnlockWithBoundIdentifier ( 5.2 ) {
+    text = "FR5.2 - The system shall unlock the locker only when reading the identifier bound to it."
+  }
+  Requirement UnlimitedOpenings ( 5.3 ) {
+    text = "FR5.3 - The system shall allow unlimited locker openings during the rental period."
+  }
+  Requirement RentalTermination ( 5.4 ) {
+    text = "FR5.4 - The system shall end the rental when the visitor releases the locker in the app, unbinding the identifier."
+  }
+  Requirement LockerWarningAtExit ( 5.5 ) {
+    text = "FR5.5 - When recording the exit of a visitor whose locker is still bound, the turnstile shall warn them and ask for confirmation before allowing the exit."
+  }
+  Requirement AssistedOpening ( 5.6 ) {
+    text = "FR5.6 - The system shall allow an assisted opening by an authenticated attendant, recording the event, when the identifier is lost or blocked."
+  }
+  Requirement LockerAvailability ( 5.7 ) {
+    text = "FR5.7 - The system shall display locker availability by area and size in the app."
+  }
+}
+
+Requirement MonitoringConfigurationReports ( 6 ) {
+  text = "FR6 - The system shall provide operational monitoring, configuration and reports."
+
+  Requirement OperationsDashboard ( 6.1 ) {
+    text = "FR6.1 - The system shall display a dashboard with occupancy, priority queue usage, lockers and alarms in real time."
+  }
+  Requirement AttractionAndReaderSetup ( 6.2 ) {
+    text = "FR6.2 - The system shall allow attractions and their readers (priority gate and optional regular queue reader) to be registered."
+  }
+  Requirement ParkConfiguration ( 6.3 ) {
+    text = "FR6.3 - The system shall allow ticket types, priority queue credits, fees, opening hours, maximum occupancy and lockers to be configured."
+  }
+  Requirement Reports ( 6.4 ) {
+    text = "FR6.4 - The system shall generate reports on visitors, sales, most visited attractions, priority queue usage, locker usage and incidents per period."
+  }
+}
+
+Requirement Performance ( 7 ) {
+  text = "NFR1 - Performance requirements."
+
+  Requirement AccessDecisionTime ( 7.1 ) {
+    text = "NFR1.1 - The decision to unlock or keep locked a turnstile, priority gate or locker shall be made within 500 ms after the identifier is read."
+  }
+  Requirement PurchaseTime ( 7.2 ) {
+    text = "NFR1.2 - A point-of-sale purchase, including linked card authorization, shall be completed within 2 s."
+  }
+}
+
+Requirement Availability ( 8 ) {
+  text = "NFR2 - Availability and fault tolerance requirements."
+
+  Requirement ServiceAvailability ( 8.1 ) {
+    text = "NFR2.1 - The access, priority queue, wallet and app services shall have 99.9% availability during opening hours."
+  }
+  Requirement OfflineOperation ( 8.2 ) {
+    text = "NFR2.2 - Turnstiles, gates, lockers and points of sale shall keep operating for up to 4 h without a connection to the central server, synchronizing records upon reconnection. While offline, points of sale accept only prepaid balance."
+  }
+}
+
+Requirement Scalability ( 9 ) {
+  text = "NFR3 - Scalability requirements."
+
+  Requirement ConcurrentVisitors ( 9.1 ) {
+    text = "NFR3.1 - The system shall support 500 to 50,000 concurrent visitors per park just by adding service instances, without code changes."
+  }
+  Requirement DeviceCapacity ( 9.2 ) {
+    text = "NFR3.2 - The system shall support at least 200 identifier readers, 100 attractions and 2,000 lockers per park."
+  }
+}
+
+Requirement Modifiability ( 10 ) {
+  text = "NFR4 - Modifiability and configurability requirements."
+
+  Requirement NewDeviceThroughAdapter ( 10.1 ) {
+    text = "NFR4.1 - A new device type (turnstile, reader or lock from another manufacturer) shall be integrated by creating an adapter, without changing the other components."
+  }
+  Requirement NewPaymentOrIdentifierType ( 10.2 ) {
+    text = "NFR4.2 - A new payment method or identifier type shall be added without changing the access and purchase core."
+  }
+  Requirement ProfilesThroughConfiguration ( 10.3 ) {
+    text = "NFR4.3 - The installation profiles of section 3.1 shall be obtained through configuration only."
+  }
+}
+
+Requirement Security ( 11 ) {
+  text = "NFR5 - Security and privacy requirements."
+
+  Requirement EncryptedCommunication ( 11.1 ) {
+    text = "NFR5.1 - All communication between devices and servers shall be encrypted (TLS 1.3 or equivalent) and devices shall be authenticated."
+  }
+  Requirement NoCardData ( 11.2 ) {
+    text = "NFR5.2 - The system shall not store card data: the linked card is tokenized by a PCI DSS certified gateway, and the wristband stores only an identifier."
+  }
+  Requirement RoleBasedAccess ( 11.3 ) {
+    text = "NFR5.3 - Access to administrative functions, assisted locker opening and wristband replacement shall require authentication and role-based access control (manager, operator, attendant)."
+  }
+  Requirement LGPDPrivacy ( 11.4 ) {
+    text = "NFR5.4 - Personal data, minors' data and attraction history shall comply with the LGPD: consent, data minimization and deletion when the purpose ends."
+  }
+}
+
+Requirement Traceability ( 12 ) {
+  text = "NFR6 - Traceability requirements."
+
+  Requirement ImmutableRecords ( 12.1 ) {
+    text = "NFR6.1 - Records of financial transactions, assisted openings and wristband replacements shall be immutable and kept for at least 5 years."
+  }
+}
+
+Requirement Portability ( 13 ) {
+  text = "NFR7 - Portability requirements."
+
+  Requirement ContainerExecution ( 13.1 ) {
+    text = "NFR7.1 - Services shall run in containers, on a local server or in a public cloud, without code changes."
+  }
+}
+
+Requirement Usability ( 14 ) {
+  text = "NFR8 - Usability requirements."
+
+  Requirement TwoTapLookup ( 14.1 ) {
+    text = "NFR8.1 - The visitor shall be able to see their balance, remaining priority queue credits and locker in the app in at most 2 taps."
+  }
 }
