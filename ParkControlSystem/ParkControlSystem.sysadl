@@ -12,7 +12,6 @@ package SysADL.types {
 	unit USD { dimension = Currency }
 	unit EUR { dimension = Currency }
 
-	// ---- value types do domínio (no mesmo pacote de Int/Real para resolver o extends)
 	value type Timestamp extends Int { }
 	value type Money extends Real { dimension = Currency }
 }
@@ -20,53 +19,34 @@ package SysADL.types {
 package ParkControl.types {
     import SysADL.types ;
 
-	// ---- enumerações
 	enum IdentifierKind { RFID, NFC, QR }
-	enum DeviceKind { EntryGate, ExitGate, PriorityGate, CommonReader, LockerUnit }
+	enum DeviceKind { EntryGate, ExitGate, PriorityGate, CommonReader }
 	enum Direction { Entry, Exit }
 	enum Lane { Common, Priority }
-	enum PaymentMode { PrePaid, LinkedCard }
-	enum WalletOp { Recharge, LinkCard, Refund, SetLimit }
-	enum LedgerOp { Debit, Credit, Refund, Query }
-	enum LockerSize { Small, Medium, Large }
-	enum LockerOp { Rent, Release, QueryAvailability }
 	enum Role { Manager, AttractionOperator, Attendant, Security }
-	enum ReasonCode { Ok, NoValidTicket, OutsideSchedule, ParkFull, Antipassback, BlockedIdentifier, PendingLockerConfirm, NoCredit, DuplicateRead, InsufficientFunds, CardDeclined, MinorRestriction, SpendingLimit, LockerUnavailable, WrongLocker, Unauthorized }
-    
+	enum ReasonCode { Ok, NoValidTicket, OutsideSchedule, ParkFull, Antipassback, BlockedIdentifier, NoCredit, DuplicateRead, CardDeclined, Unauthorized }
+
     datatype Credential { attributes : identifier : String ; kind : IdentifierKind ; }
-    datatype DeviceRead { attributes : deviceId : String ; credential : Credential ; ts : Timestamp ; }
+	datatype DeviceRead { attributes : deviceId : String ; credential : Credential ; ts : Timestamp ; }
 	datatype DeviceCommand { attributes : deviceId : String ; release : Boolean ; displayText : String ; }
 	datatype ReadEvent { attributes : deviceId : String ; kind : DeviceKind ; credential : Credential ; ts : Timestamp ; }
 	datatype Decision { attributes : deviceId : String ; release : Boolean ; reason : ReasonCode ; creditsLeft : Int ; }
 	datatype TicketCheckRequest { attributes : deviceId : String ; credential : Credential ; ts : Timestamp ; }
 	datatype TicketCheckResult { attributes : credential : Credential ; valid : Boolean ; reason : ReasonCode ; ticketTypeCode : String ; priorityCredits : Int ; }
-	datatype LockerStatusQuery { attributes : credential : Credential ; }
-	datatype LockerStatusResult { attributes : credential : Credential ; hasActiveLocker : Boolean ; }
 	datatype AccessEvent { attributes : credential : Credential ; direction : Direction ; deviceId : String ; ts : Timestamp ; priorityCredits : Int ; }
 	datatype OccupancyState { attributes : count : Int ; limit : Int ; admitting : Boolean ; }
 	datatype CreditsView { attributes : credential : Credential ; creditsLeft : Int ; }
 	datatype VisitRecord { attributes : credential : Credential ; attractionId : String ; lane : Lane ; ts : Timestamp ; }
-	datatype TicketOrder { attributes : buyerName : String ; birthDate : String ; ticketTypeCode : String ; visitDate : String ; paymentMethod : String ; cardToken : String ; channel : String ; guardian : Credential ; }
+	datatype TicketOrder { attributes : buyerName : String ; ticketTypeCode : String ; visitDate : String ; paymentMethod : String ; cardToken : String ; channel : String ; }
 	datatype TicketOrderResult { attributes : orderId : String ; approved : Boolean ; reason : ReasonCode ; ticketQr : Credential ; }
 	datatype DispenseRequest { attributes : kioskId : String ; ticketQr : Credential ; wristband : Credential ; }
 	datatype DispenseDecision { attributes : kioskId : String ; dispense : Boolean ; reason : ReasonCode ; }
 	datatype LostReport { attributes : lost : Credential ; requesterId : String ; }
 	datatype CredentialTransfer { attributes : oldCredential : Credential ; newCredential : Credential ; block : Boolean ; }
-	datatype CredentialProfile { attributes : credential : Credential ; minor : Boolean ; guardian : Credential ; }
-	datatype PurchaseRequest { attributes : terminalId : String ; credential : Credential ; amount : Money ; containsAlcohol : Boolean ; ts : Timestamp ; }
-	datatype PurchaseResult { attributes : terminalId : String ; approved : Boolean ; reason : ReasonCode ; paidWith : PaymentMode ; balance : Money ; }
-	datatype WalletOperation { attributes : credential : Credential ; op : WalletOp ; amount : Money ; method : String ; cardToken : String ; spendingLimit : Money ; requesterId : String ; }
-	datatype WalletView { attributes : credential : Credential ; balance : Money ; spendingLimit : Money ; cardLinked : Boolean ; lastOk : Boolean ; reason : ReasonCode ; }
-	datatype ChargeRequest { attributes : credential : Credential ; amount : Money ; description : String ; }
-	datatype ChargeResult { attributes : credential : Credential ; approved : Boolean ; reason : ReasonCode ; amount : Money ; }
-	datatype LedgerRequest { attributes : credential : Credential ; op : LedgerOp ; amount : Money ; reference : String ; }
-	datatype LedgerResult { attributes : credential : Credential ; ok : Boolean ; reason : ReasonCode ; balance : Money ; reference : String ; }
 	datatype PaymentRequest { attributes : orderRef : String ; amount : Money ; method : String ; cardToken : String ; verb : String ; }
 	datatype PaymentResult { attributes : orderRef : String ; approved : Boolean ; reason : ReasonCode ; cardToken : String ; }
 	datatype GatewayCall { attributes : provider : String ; payload : String ; }
 	datatype GatewayReply { attributes : provider : String ; payload : String ; }
-	datatype LockerRequest { attributes : credential : Credential ; op : LockerOp ; size : LockerSize ; area : String ; }
-	datatype LockerView { attributes : credential : Credential ; ok : Boolean ; reason : ReasonCode ; lockerId : String ; size : LockerSize ; area : String ; available : Int ; }
 	datatype DomainEvent { attributes : origin : String ; kind : String ; subject : String ; amount : Money ; ts : Timestamp ; }
 	datatype NotificationRequest { attributes : recipient : String ; channel : String ; message : String ; }
 	datatype NotificationCall { attributes : provider : String ; payload : String ; }
@@ -94,10 +74,6 @@ package ParkControl.portdefs {
 	port def TicketCheckRequestIPT { flow in TicketCheckRequest }
 	port def TicketCheckResultOPT { flow out TicketCheckResult }
 	port def TicketCheckResultIPT { flow in TicketCheckResult }
-	port def LockerStatusQueryOPT { flow out LockerStatusQuery }
-	port def LockerStatusQueryIPT { flow in LockerStatusQuery }
-	port def LockerStatusResultOPT { flow out LockerStatusResult }
-	port def LockerStatusResultIPT { flow in LockerStatusResult }
 	port def AccessEventOPT { flow out AccessEvent }
 	port def AccessEventIPT { flow in AccessEvent }
 	port def OccupancyStateOPT { flow out OccupancyState }
@@ -120,24 +96,6 @@ package ParkControl.portdefs {
 	port def LostReportIPT { flow in LostReport }
 	port def CredentialTransferOPT { flow out CredentialTransfer }
 	port def CredentialTransferIPT { flow in CredentialTransfer }
-	port def CredentialProfileOPT { flow out CredentialProfile }
-	port def CredentialProfileIPT { flow in CredentialProfile }
-	port def PurchaseRequestOPT { flow out PurchaseRequest }
-	port def PurchaseRequestIPT { flow in PurchaseRequest }
-	port def PurchaseResultOPT { flow out PurchaseResult }
-	port def PurchaseResultIPT { flow in PurchaseResult }
-	port def WalletOperationOPT { flow out WalletOperation }
-	port def WalletOperationIPT { flow in WalletOperation }
-	port def WalletViewOPT { flow out WalletView }
-	port def WalletViewIPT { flow in WalletView }
-	port def ChargeRequestOPT { flow out ChargeRequest }
-	port def ChargeRequestIPT { flow in ChargeRequest }
-	port def ChargeResultOPT { flow out ChargeResult }
-	port def ChargeResultIPT { flow in ChargeResult }
-	port def LedgerRequestOPT { flow out LedgerRequest }
-	port def LedgerRequestIPT { flow in LedgerRequest }
-	port def LedgerResultOPT { flow out LedgerResult }
-	port def LedgerResultIPT { flow in LedgerResult }
 	port def PaymentRequestOPT { flow out PaymentRequest }
 	port def PaymentRequestIPT { flow in PaymentRequest }
 	port def PaymentResultOPT { flow out PaymentResult }
@@ -146,10 +104,6 @@ package ParkControl.portdefs {
 	port def GatewayCallIPT { flow in GatewayCall }
 	port def GatewayReplyOPT { flow out GatewayReply }
 	port def GatewayReplyIPT { flow in GatewayReply }
-	port def LockerRequestOPT { flow out LockerRequest }
-	port def LockerRequestIPT { flow in LockerRequest }
-	port def LockerViewOPT { flow out LockerView }
-	port def LockerViewIPT { flow in LockerView }
 	port def DomainEventOPT { flow out DomainEvent }
 	port def DomainEventIPT { flow in DomainEvent }
 	port def NotificationRequestOPT { flow out NotificationRequest }
@@ -194,12 +148,6 @@ package ParkControl.connectordefs {
 	connector def TicketCheckResultCN {
 		participants : ~ source : TicketCheckResultOPT ; ~ destination : TicketCheckResultIPT ; flows : TicketCheckResult from source to destination
 	}
-	connector def LockerStatusQueryCN {
-		participants : ~ source : LockerStatusQueryOPT ; ~ destination : LockerStatusQueryIPT ; flows : LockerStatusQuery from source to destination
-	}
-	connector def LockerStatusResultCN {
-		participants : ~ source : LockerStatusResultOPT ; ~ destination : LockerStatusResultIPT ; flows : LockerStatusResult from source to destination
-	}
 	connector def AccessEventCN {
 		participants : ~ source : AccessEventOPT ; ~ destination : AccessEventIPT ; flows : AccessEvent from source to destination
 	}
@@ -233,33 +181,6 @@ package ParkControl.connectordefs {
 	connector def CredentialTransferCN {
 		participants : ~ source : CredentialTransferOPT ; ~ destination : CredentialTransferIPT ; flows : CredentialTransfer from source to destination
 	}
-	connector def CredentialProfileCN {
-		participants : ~ source : CredentialProfileOPT ; ~ destination : CredentialProfileIPT ; flows : CredentialProfile from source to destination
-	}
-	connector def PurchaseRequestCN {
-		participants : ~ source : PurchaseRequestOPT ; ~ destination : PurchaseRequestIPT ; flows : PurchaseRequest from source to destination
-	}
-	connector def PurchaseResultCN {
-		participants : ~ source : PurchaseResultOPT ; ~ destination : PurchaseResultIPT ; flows : PurchaseResult from source to destination
-	}
-	connector def WalletOperationCN {
-		participants : ~ source : WalletOperationOPT ; ~ destination : WalletOperationIPT ; flows : WalletOperation from source to destination
-	}
-	connector def WalletViewCN {
-		participants : ~ source : WalletViewOPT ; ~ destination : WalletViewIPT ; flows : WalletView from source to destination
-	}
-	connector def ChargeRequestCN {
-		participants : ~ source : ChargeRequestOPT ; ~ destination : ChargeRequestIPT ; flows : ChargeRequest from source to destination
-	}
-	connector def ChargeResultCN {
-		participants : ~ source : ChargeResultOPT ; ~ destination : ChargeResultIPT ; flows : ChargeResult from source to destination
-	}
-	connector def LedgerRequestCN {
-		participants : ~ source : LedgerRequestOPT ; ~ destination : LedgerRequestIPT ; flows : LedgerRequest from source to destination
-	}
-	connector def LedgerResultCN {
-		participants : ~ source : LedgerResultOPT ; ~ destination : LedgerResultIPT ; flows : LedgerResult from source to destination
-	}
 	connector def PaymentRequestCN {
 		participants : ~ source : PaymentRequestOPT ; ~ destination : PaymentRequestIPT ; flows : PaymentRequest from source to destination
 	}
@@ -271,12 +192,6 @@ package ParkControl.connectordefs {
 	}
 	connector def GatewayReplyCN {
 		participants : ~ source : GatewayReplyOPT ; ~ destination : GatewayReplyIPT ; flows : GatewayReply from source to destination
-	}
-	connector def LockerRequestCN {
-		participants : ~ source : LockerRequestOPT ; ~ destination : LockerRequestIPT ; flows : LockerRequest from source to destination
-	}
-	connector def LockerViewCN {
-		participants : ~ source : LockerViewOPT ; ~ destination : LockerViewIPT ; flows : LockerView from source to destination
 	}
 	connector def DomainEventCN {
 		participants : ~ source : DomainEventOPT ; ~ destination : DomainEventIPT ; flows : DomainEvent from source to destination
@@ -312,27 +227,19 @@ package ParkControl.componentdefs {
 	import ParkControl.portdefs;
 	import ParkControl.connectordefs;
 	
-	// ---- dispositivos de borda e sistemas externos (boundary)
-	// Pulseira RFID/NFC passiva (identificador único). [RF2.2]
 	boundary component def WristbandCP {
 		ports :
 			credential : CredentialOPT ;
 	}
-	// App do visitante: compra, QR, carteira, armário, créditos e histórico. [RF2.1, RF2.2, RF2.5, RF3.6, RF3.8, RF4.1, RF4.2, RF4.5, RF4.6, RF5.1, RF5.4, RF5.7, RNF8.1]
 	boundary component def VisitorAppCP {
 		ports :
 			qr : CredentialOPT ;
 			order : TicketOrderOPT ;
 			lostReport : LostReportOPT ;
-			walletOperation : WalletOperationOPT ;
-			lockerRequest : LockerRequestOPT ;
 			orderResult : TicketOrderResultIPT ;
-			walletView : WalletViewIPT ;
-			lockerView : LockerViewIPT ;
 			credits : CreditsViewIPT ;
 			history : VisitHistoryIPT ;
 	}
-	// Totem dispenser de pulseiras (lê QR, vende ingresso, entrega pulseira). [RF2.1, RF2.6]
 	boundary component def DispenserKioskCP {
 		ports :
 			qr : CredentialIPT ;
@@ -341,7 +248,6 @@ package ParkControl.componentdefs {
 			order : TicketOrderOPT ;
 			dispenseRequest : DispenseRequestOPT ;
 	}
-	// Catraca de entrada/saída (leitor RFID/QR + trava do braço). [RF1.1, RF1.3]
 	boundary component def TurnstileCP {
 		ports :
 			rfid : CredentialIPT ;
@@ -349,7 +255,6 @@ package ParkControl.componentdefs {
 			command : DeviceCommandIPT ;
 			read : DeviceReadOPT ;
 	}
-	// Portão da fila prioritária (leitor + trava). [RF3.2, RF3.3]
 	boundary component def PriorityGateCP {
 		ports :
 			rfid : CredentialIPT ;
@@ -357,49 +262,28 @@ package ParkControl.componentdefs {
 			command : DeviceCommandIPT ;
 			read : DeviceReadOPT ;
 	}
-	// Leitor da fila comum (só registra, não bloqueia). [RF3.7]
 	boundary component def CommonQueueReaderCP {
 		ports :
 			rfid : CredentialIPT ;
 			read : DeviceReadOPT ;
 	}
-	// Armário de guarda-volumes (leitor + fechadura + sensor de porta). [RF5.2, RF5.3]
-	boundary component def LockerUnitCP {
-		ports :
-			rfid : CredentialIPT ;
-			command : DeviceCommandIPT ;
-			read : DeviceReadOPT ;
-	}
-	// Terminal de ponto de venda (pagamento por aproximação). [RF4.3, RF4.4]
-	boundary component def PosTerminalCP {
-		ports :
-			rfid : CredentialIPT ;
-			result : PurchaseResultIPT ;
-			purchase : PurchaseRequestOPT ;
-	}
-	// Console de gestão (gerente, operador, atendente, segurança). [RF5.6, RF6.1, RF6.2, RF6.3, RF6.4]
 	boundary component def BackofficeConsoleCP {
 		ports :
 			request : AdminRequestOPT ;
 			session : SessionIPT ;
 			dashboard : DashboardViewIPT ;
 			configResult : AdminResultIPT ;
-			lockerResult : AdminResultIPT ;
 	}
-	// Gateway de pagamento externo (Pix, débito, crédito; PCI DSS). [RNF5.2]
 	boundary component def PaymentGatewayCP {
 		ports :
 			call : GatewayCallIPT ;
 			reply : GatewayReplyOPT ;
 	}
-	// Serviço externo de e-mail/SMS/push. [Sistemas externos]
 	boundary component def NotificationServiceCP {
 		ports :
 			call : NotificationCallIPT ;
 	}
 
-	// ---- adaptadores de dispositivo (RNF4.1)
-	// Adaptador de dispositivo bidirecional (protocolo do fabricante <-> modelo do domínio); opera com cache/regras locais e fila de sincronização quando offline. [RNF1.1, RNF2.2, RNF4.1]
 	component def DeviceAdapterCP {
 		ports :
 			deviceRead : DeviceReadIPT ;
@@ -408,7 +292,6 @@ package ParkControl.componentdefs {
 			deviceCommand : DeviceCommandOPT ;
 			readEvent : ReadEventOPT ;
 	}
-	// Adaptador de leitor somente-leitura (fila comum). [RNF2.2, RNF4.1]
 	component def ReadOnlyAdapterCP {
 		ports :
 			deviceRead : DeviceReadIPT ;
@@ -416,22 +299,17 @@ package ParkControl.componentdefs {
 			readEvent : ReadEventOPT ;
 	}
 
-	// ---- componentes internos dos compostos
-	// Decide liberar/bloquear a catraca (ingresso, data, lotação, antipassback, armário). [RF1.1, RF1.4, RF5.5]
 	component def AccessDecisionCP {
 		ports :
 			attempt : ReadEventIPT ;
 			ticketResult : TicketCheckResultIPT ;
-			lockerStatus : LockerStatusResultIPT ;
 			rules : ConfigSnapshotIPT ;
 			occupancyState : OccupancyStateIPT ;
 			decision : DecisionOPT ;
 			ticketQuery : TicketCheckRequestOPT ;
-			lockerQuery : LockerStatusQueryOPT ;
 			accessEvent : AccessEventOPT ;
 			accessEventCount : AccessEventOPT ;
 	}
-	// Contagem de ocupação em tempo real com histerese de 95%. [RF1.2, RF1.3]
 	component def OccupancyControllerCP {
 		ports :
 			accessEvent : AccessEventIPT ;
@@ -439,7 +317,6 @@ package ParkControl.componentdefs {
 			occupancyFeedback : OccupancyStateOPT ;
 			occupancy : OccupancyStateOPT ;
 	}
-	// Concede, debita (com janela anti-duplicidade de 1 min) e expira créditos prioritários. [RF3.1, RF3.2, RF3.3, RF3.4, RF3.5, RF3.6]
 	component def CreditManagerCP {
 		ports :
 			gateRead : ReadEventIPT ;
@@ -451,54 +328,25 @@ package ParkControl.componentdefs {
 			visit : VisitRecordOPT ;
 			events : DomainEventOPT ;
 	}
-	// Registro/histórico de atrações visitadas (filas comum e prioritária). [RF3.7, RF3.8, RNF5.4]
 	component def VisitLogCP {
 		ports :
 			visit : VisitRecordIPT ;
 			visitRead : ReadEventIPT ;
 			history : VisitHistoryOPT ;
 	}
-	// Autoriza compras (saldo/cartão, restrição de menores, limite de gasto), cartão vinculado tokenizado. [RF4.2, RF4.3, RF4.4, RF4.6, RNF5.2]
-	component def PurchasePolicyCP {
-		ports :
-			purchase : PurchaseRequestIPT ;
-			operation : WalletOperationIPT ;
-			charge : ChargeRequestIPT ;
-			paymentResult : PaymentResultIPT ;
-			profile : CredentialProfileIPT ;
-			config : ConfigSnapshotIPT ;
-			ledgerResult : LedgerResultIPT ;
-			purchaseResult : PurchaseResultOPT ;
-			view : WalletViewOPT ;
-			chargeResult : ChargeResultOPT ;
-			paymentRequest : PaymentRequestOPT ;
-			ledgerRequest : LedgerRequestOPT ;
-	}
-	// Razão do saldo pré-pago (recarga, débito, estorno, transferência de pulseira). [RF2.5, RF4.1, RF4.5, RNF6.1]
-	component def LedgerCP {
-		ports :
-			ledgerRequest : LedgerRequestIPT ;
-			transfer : CredentialTransferIPT ;
-			ledgerResult : LedgerResultOPT ;
-			events : DomainEventOPT ;
-	}
 
-	// ---- componentes compostos
-	// Controle de acesso ao parque (decisão da catraca + ocupação). [RF1.1-RF1.4, RF5.5]
 	component def AccessControlCP {
 		ports :
 			attempt : ReadEventIPT ;
 			ticketResult : TicketCheckResultIPT ;
-			lockerStatus : LockerStatusResultIPT ;
 			config : ConfigSnapshotIPT ;
 			decision : DecisionOPT ;
 			ticketQuery : TicketCheckRequestOPT ;
-			lockerQuery : LockerStatusQueryOPT ;
 			accessEvent : AccessEventOPT ;
 			occupancy : OccupancyStateOPT ;
 		configuration {
 			components :
-				ad : AccessDecisionCP { using ports : attempt : ReadEventIPT ; ticketResult : TicketCheckResultIPT ; lockerStatus : LockerStatusResultIPT ; rules : ConfigSnapshotIPT ; occupancyState : OccupancyStateIPT ; decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; lockerQuery : LockerStatusQueryOPT ; ad_accessEvent : AccessEventOPT ; accessEventCount : AccessEventOPT ; }
+				ad : AccessDecisionCP { using ports : attempt : ReadEventIPT ; ticketResult : TicketCheckResultIPT ; rules : ConfigSnapshotIPT ; occupancyState : OccupancyStateIPT ; decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; ad_accessEvent : AccessEventOPT ; accessEventCount : AccessEventOPT ; }
 				oc : OccupancyControllerCP { using ports : oc_accessEvent : AccessEventIPT ; capacity : ConfigSnapshotIPT ; occupancyFeedback : OccupancyStateOPT ; occupancy : OccupancyStateOPT ; }
 			connectors :
 				k1 : AccessEventCN bindings accessEventCount = oc_accessEvent ;
@@ -506,17 +354,14 @@ package ParkControl.componentdefs {
 			delegations :
 				attempt to attempt
 				ticketResult to ticketResult
-				lockerStatus to lockerStatus
 				rules to config
 				capacity to config
 				decision to decision
 				ticketQuery to ticketQuery
-				lockerQuery to lockerQuery
 				ad_accessEvent to accessEvent
 				occupancy to occupancy
 		}
 	}
-	// Filas prioritárias: créditos diários e registro de atrações visitadas. [RF3.1-RF3.8]
 	component def PriorityQueueCP {
 		ports :
 			gateRead : ReadEventIPT ;
@@ -546,46 +391,7 @@ package ParkControl.componentdefs {
 				events to events
 		}
 	}
-	// Carteira digital: saldo pré-pago, cartão vinculado, políticas de consumo. [RF4.1-RF4.6]
-	component def WalletCP {
-		ports :
-			purchase : PurchaseRequestIPT ;
-			operation : WalletOperationIPT ;
-			charge : ChargeRequestIPT ;
-			paymentResult : PaymentResultIPT ;
-			profile : CredentialProfileIPT ;
-			transfer : CredentialTransferIPT ;
-			config : ConfigSnapshotIPT ;
-			purchaseResult : PurchaseResultOPT ;
-			view : WalletViewOPT ;
-			chargeResult : ChargeResultOPT ;
-			paymentRequest : PaymentRequestOPT ;
-			events : DomainEventOPT ;
-		configuration {
-			components :
-				pol : PurchasePolicyCP { using ports : purchase : PurchaseRequestIPT ; operation : WalletOperationIPT ; charge : ChargeRequestIPT ; paymentResult : PaymentResultIPT ; profile : CredentialProfileIPT ; config : ConfigSnapshotIPT ; pol_ledgerResult : LedgerResultIPT ; purchaseResult : PurchaseResultOPT ; view : WalletViewOPT ; chargeResult : ChargeResultOPT ; paymentRequest : PaymentRequestOPT ; pol_ledgerRequest : LedgerRequestOPT ; }
-				led : LedgerCP { using ports : led_ledgerRequest : LedgerRequestIPT ; transfer : CredentialTransferIPT ; led_ledgerResult : LedgerResultOPT ; events : DomainEventOPT ; }
-			connectors :
-				k1 : LedgerRequestCN bindings pol_ledgerRequest = led_ledgerRequest ;
-				k2 : LedgerResultCN bindings led_ledgerResult = pol_ledgerResult ;
-			delegations :
-				purchase to purchase
-				operation to operation
-				charge to charge
-				paymentResult to paymentResult
-				profile to profile
-				transfer to transfer
-				config to config
-				purchaseResult to purchaseResult
-				view to view
-				chargeResult to chargeResult
-				paymentRequest to paymentRequest
-				events to events
-		}
-	}
 
-	// ---- serviços e adaptadores de integração
-	// Ingressos, cadastro (data de nascimento, responsável), vínculo ingresso-pulseira, perda/transferência. [RF2.1-RF2.6, RNF5.4]
 	component def TicketingServiceCP {
 		ports :
 			orderApp : TicketOrderIPT ;
@@ -600,49 +406,26 @@ package ParkControl.componentdefs {
 			checkResult : TicketCheckResultOPT ;
 			dispenseDecision : DispenseDecisionOPT ;
 			transfer : CredentialTransferOPT ;
-			profile : CredentialProfileOPT ;
 			paymentRequest : PaymentRequestOPT ;
 			notification : NotificationRequestOPT ;
 			events : DomainEventOPT ;
 	}
-	// Locação, vínculo armário-pulseira, aberturas, abertura assistida, disponibilidade. [RF5.1-RF5.7]
-	component def LockerServiceCP {
-		ports :
-			read : ReadEventIPT ;
-			request : LockerRequestIPT ;
-			statusQuery : LockerStatusQueryIPT ;
-			chargeResult : ChargeResultIPT ;
-			transfer : CredentialTransferIPT ;
-			command : AuthorizedCommandIPT ;
-			config : ConfigSnapshotIPT ;
-			decision : DecisionOPT ;
-			view : LockerViewOPT ;
-			statusResult : LockerStatusResultOPT ;
-			charge : ChargeRequestOPT ;
-			events : DomainEventOPT ;
-			adminResult : AdminResultOPT ;
-	}
-	// Painel em tempo real, alarmes de lotação/incidentes e relatórios. [RF6.1, RF6.4]
 	component def MonitoringServiceCP {
 		ports :
 			occupancy : OccupancyStateIPT ;
 			accessEvents : AccessEventIPT ;
 			priorityEvents : DomainEventIPT ;
 			ticketEvents : DomainEventIPT ;
-			walletEvents : DomainEventIPT ;
-			lockerEvents : DomainEventIPT ;
 			command : AuthorizedCommandIPT ;
 			dashboard : DashboardViewOPT ;
 			notification : NotificationRequestOPT ;
 	}
-	// Cadastro de atrações/leitores e parâmetros (ingressos, créditos, tarifas, horários, lotação, armários). [RF6.2, RF6.3, RNF4.3]
 	component def ConfigurationServiceCP {
 		ports :
 			command : AuthorizedCommandIPT ;
 			config : ConfigSnapshotOPT ;
 			result : AdminResultOPT ;
 	}
-	// Autenticação e controle de acesso por papel (único ponto de entrada administrativo). [RNF5.3]
 	component def IdentityAccessCP {
 		ports :
 			request : AdminRequestIPT ;
@@ -650,148 +433,226 @@ package ParkControl.componentdefs {
 			command : AuthorizedCommandOPT ;
 			events : DomainEventOPT ;
 	}
-	// Registro imutável (append-only) de transações e aberturas assistidas, retenção de 5 anos. [RNF6.1]
 	component def AuditLogCP {
 		ports :
 			ticketEvents : DomainEventIPT ;
-			walletEvents : DomainEventIPT ;
-			lockerEvents : DomainEventIPT ;
 			adminEvents : DomainEventIPT ;
 	}
-	// Isola o provedor de pagamento (novos meios sem alterar o núcleo; só tokens de cartão). [RNF4.2, RNF5.2]
 	component def PaymentGatewayAdapterCP {
 		ports :
-			walletRequest : PaymentRequestIPT ;
 			ticketRequest : PaymentRequestIPT ;
 			reply : GatewayReplyIPT ;
-			walletResult : PaymentResultOPT ;
 			ticketResult : PaymentResultOPT ;
 			call : GatewayCallOPT ;
 	}
-	// Isola o provedor de e-mail/SMS/push. [RNF4.2]
 	component def NotificationAdapterCP {
 		ports :
 			fromMonitoring : NotificationRequestIPT ;
 			fromTicketing : NotificationRequestIPT ;
 			call : NotificationCallOPT ;
 	}
-	
-	// ---- ARQUITETURA: configuração geral do ParkControl (IBD de nível superior)
+
+	component def ParkAccessSubsystemCP {
+		ports :
+			deviceRead : DeviceReadIPT ;
+			deviceCommand : DeviceCommandOPT ;
+			config : ConfigSnapshotIPT ;
+			ticketQuery : TicketCheckRequestOPT ;
+			ticketResult : TicketCheckResultIPT ;
+			accessEvent : AccessEventOPT ;
+			occupancy : OccupancyStateOPT ;
+		configuration {
+			components :
+				turnstileAd : DeviceAdapterCP { using ports : deviceRead : DeviceReadIPT ; turnstileAd_decision : DecisionIPT ; turnstileAd_config : ConfigSnapshotIPT ; deviceCommand : DeviceCommandOPT ; readEvent : ReadEventOPT ; }
+				accessCtl : AccessControlCP { using ports : attempt : ReadEventIPT ; ticketResult : TicketCheckResultIPT ; accessCtl_config : ConfigSnapshotIPT ; accessCtl_decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; accessEvent : AccessEventOPT ; occupancy : OccupancyStateOPT ; }
+			connectors :
+				k1 : ReadEventCN bindings readEvent = attempt ;
+				k2 : DecisionCN bindings accessCtl_decision = turnstileAd_decision ;
+			delegations :
+				deviceRead to deviceRead
+				deviceCommand to deviceCommand
+				accessCtl_config to config
+				turnstileAd_config to config
+				ticketQuery to ticketQuery
+				ticketResult to ticketResult
+				accessEvent to accessEvent
+				occupancy to occupancy
+		}
+	}
+	component def PriorityQueueSubsystemCP {
+		ports :
+			pgateAd_deviceRead : DeviceReadIPT ;
+			creaderAd_deviceRead : DeviceReadIPT ;
+			deviceCommand : DeviceCommandOPT ;
+			config : ConfigSnapshotIPT ;
+			accessEvent : AccessEventIPT ;
+			credits : CreditsViewOPT ;
+			history : VisitHistoryOPT ;
+			events : DomainEventOPT ;
+			transfer : CredentialTransferIPT ;
+		configuration {
+			components :
+				pgateAd : DeviceAdapterCP { using ports : pgateAd_deviceRead : DeviceReadIPT ; pgateAd_decision : DecisionIPT ; pgateAd_config : ConfigSnapshotIPT ; deviceCommand : DeviceCommandOPT ; pgateAd_readEvent : ReadEventOPT ; }
+				creaderAd : ReadOnlyAdapterCP { using ports : creaderAd_deviceRead : DeviceReadIPT ; creaderAd_config : ConfigSnapshotIPT ; creaderAd_readEvent : ReadEventOPT ; }
+				priorityQ : PriorityQueueCP { using ports : gateRead : ReadEventIPT ; visitRead : ReadEventIPT ; accessEvent : AccessEventIPT ; transfer : CredentialTransferIPT ; priorityQ_config : ConfigSnapshotIPT ; priorityQ_decision : DecisionOPT ; credits : CreditsViewOPT ; history : VisitHistoryOPT ; events : DomainEventOPT ; }
+			connectors :
+				k1 : ReadEventCN bindings pgateAd_readEvent = gateRead ;
+				k2 : ReadEventCN bindings creaderAd_readEvent = visitRead ;
+				k3 : DecisionCN bindings priorityQ_decision = pgateAd_decision ;
+			delegations :
+				pgateAd_deviceRead to pgateAd_deviceRead
+				creaderAd_deviceRead to creaderAd_deviceRead
+				deviceCommand to deviceCommand
+				priorityQ_config to config
+				pgateAd_config to config
+				creaderAd_config to config
+				accessEvent to accessEvent
+				credits to credits
+				history to history
+				events to events
+				transfer to transfer
+		}
+	}
+	component def TicketingSubsystemCP {
+		ports :
+			config : ConfigSnapshotIPT ;
+			checkRequest : TicketCheckRequestIPT ;
+			checkResult : TicketCheckResultOPT ;
+			orderApp : TicketOrderIPT ;
+			orderKiosk : TicketOrderIPT ;
+			orderResultApp : TicketOrderResultOPT ;
+			orderResultKiosk : TicketOrderResultOPT ;
+			dispenseRequest : DispenseRequestIPT ;
+			dispenseDecision : DispenseDecisionOPT ;
+			lostReport : LostReportIPT ;
+			transfer : CredentialTransferOPT ;
+			notification : NotificationRequestOPT ;
+			events : DomainEventOPT ;
+			call : GatewayCallOPT ;
+			reply : GatewayReplyIPT ;
+		configuration {
+			components :
+				ticketing : TicketingServiceCP { using ports : orderApp : TicketOrderIPT ; orderKiosk : TicketOrderIPT ; checkRequest : TicketCheckRequestIPT ; dispenseRequest : DispenseRequestIPT ; lostReport : LostReportIPT ; paymentResult : PaymentResultIPT ; config : ConfigSnapshotIPT ; orderResultApp : TicketOrderResultOPT ; orderResultKiosk : TicketOrderResultOPT ; checkResult : TicketCheckResultOPT ; dispenseDecision : DispenseDecisionOPT ; transfer : CredentialTransferOPT ; paymentRequest : PaymentRequestOPT ; notification : NotificationRequestOPT ; events : DomainEventOPT ; }
+				payAd : PaymentGatewayAdapterCP { using ports : ticketRequest : PaymentRequestIPT ; reply : GatewayReplyIPT ; ticketResult : PaymentResultOPT ; call : GatewayCallOPT ; }
+			connectors :
+				k1 : PaymentRequestCN bindings paymentRequest = ticketRequest ;
+				k2 : PaymentResultCN bindings ticketResult = paymentResult ;
+			delegations :
+				config to config
+				checkRequest to checkRequest
+				checkResult to checkResult
+				orderApp to orderApp
+				orderKiosk to orderKiosk
+				orderResultApp to orderResultApp
+				orderResultKiosk to orderResultKiosk
+				dispenseRequest to dispenseRequest
+				dispenseDecision to dispenseDecision
+				lostReport to lostReport
+				transfer to transfer
+				notification to notification
+				events to events
+				call to call
+				reply to reply
+		}
+	}
+	component def OperationsSubsystemCP {
+		ports :
+			config : ConfigSnapshotOPT ;
+			accessEvents : AccessEventIPT ;
+			occupancy : OccupancyStateIPT ;
+			priorityEvents : DomainEventIPT ;
+			fromTicketing : NotificationRequestIPT ;
+			ticketEvents : DomainEventIPT ;
+			request : AdminRequestIPT ;
+			session : SessionOPT ;
+			result : AdminResultOPT ;
+			dashboard : DashboardViewOPT ;
+			call : NotificationCallOPT ;
+		configuration {
+			components :
+				monitoring : MonitoringServiceCP { using ports : occupancy : OccupancyStateIPT ; accessEvents : AccessEventIPT ; priorityEvents : DomainEventIPT ; monitoring_ticketEvents : DomainEventIPT ; monitoring_command : AuthorizedCommandIPT ; dashboard : DashboardViewOPT ; notification : NotificationRequestOPT ; }
+				cfgSvc : ConfigurationServiceCP { using ports : cfgSvc_command : AuthorizedCommandIPT ; config : ConfigSnapshotOPT ; result : AdminResultOPT ; }
+				iam : IdentityAccessCP { using ports : request : AdminRequestIPT ; session : SessionOPT ; iam_command : AuthorizedCommandOPT ; events : DomainEventOPT ; }
+				auditLog : AuditLogCP { using ports : auditLog_ticketEvents : DomainEventIPT ; adminEvents : DomainEventIPT ; }
+				notifAd : NotificationAdapterCP { using ports : fromMonitoring : NotificationRequestIPT ; fromTicketing : NotificationRequestIPT ; call : NotificationCallOPT ; }
+			connectors :
+				k1 : AuthorizedCommandCN bindings iam_command = cfgSvc_command ;
+				k2 : AuthorizedCommandCN bindings iam_command = monitoring_command ;
+				k3 : DomainEventCN bindings events = adminEvents ;
+				k4 : NotificationRequestCN bindings notification = fromMonitoring ;
+			delegations :
+				config to config
+				accessEvents to accessEvents
+				occupancy to occupancy
+				priorityEvents to priorityEvents
+				fromTicketing to fromTicketing
+				monitoring_ticketEvents to ticketEvents
+				auditLog_ticketEvents to ticketEvents
+				request to request
+				session to session
+				result to result
+				dashboard to dashboard
+				call to call
+		}
+	}
+
 	component def ParkControlCP {
 		ports :
 		configuration {
 			components :
 				wb : WristbandCP [1, 50000] { using ports : credential : CredentialOPT ; }
-				app : VisitorAppCP { using ports : app_qr : CredentialOPT ; app_order : TicketOrderOPT ; app_lostReport : LostReportOPT ; walletOperation : WalletOperationOPT ; lockerRequest : LockerRequestOPT ; app_orderResult : TicketOrderResultIPT ; walletView : WalletViewIPT ; lockerView : LockerViewIPT ; app_credits : CreditsViewIPT ; app_history : VisitHistoryIPT ; }
+				app : VisitorAppCP { using ports : app_qr : CredentialOPT ; app_order : TicketOrderOPT ; app_lostReport : LostReportOPT ; app_orderResult : TicketOrderResultIPT ; app_credits : CreditsViewIPT ; app_history : VisitHistoryIPT ; }
 				kiosk : DispenserKioskCP [1, 20] { using ports : kiosk_qr : CredentialIPT ; kiosk_orderResult : TicketOrderResultIPT ; kiosk_dispenseDecision : DispenseDecisionIPT ; kiosk_order : TicketOrderOPT ; kiosk_dispenseRequest : DispenseRequestOPT ; }
 				turnstile : TurnstileCP [1, 50] { using ports : turnstile_rfid : CredentialIPT ; turnstile_qr : CredentialIPT ; turnstile_command : DeviceCommandIPT ; turnstile_read : DeviceReadOPT ; }
 				pgate : PriorityGateCP [1, 100] { using ports : pgate_rfid : CredentialIPT ; pgate_qr : CredentialIPT ; pgate_command : DeviceCommandIPT ; pgate_read : DeviceReadOPT ; }
 				creader : CommonQueueReaderCP [0, 100] { using ports : creader_rfid : CredentialIPT ; creader_read : DeviceReadOPT ; }
-				lockerUnit : LockerUnitCP [1, 2000] { using ports : lockerUnit_rfid : CredentialIPT ; lockerUnit_command : DeviceCommandIPT ; lockerUnit_read : DeviceReadOPT ; }
-				pos : PosTerminalCP [1, 200] { using ports : pos_rfid : CredentialIPT ; pos_result : PurchaseResultIPT ; pos_purchase : PurchaseRequestOPT ; }
-				console : BackofficeConsoleCP { using ports : console_request : AdminRequestOPT ; console_session : SessionIPT ; console_dashboard : DashboardViewIPT ; configResult : AdminResultIPT ; lockerResult : AdminResultIPT ; }
+				console : BackofficeConsoleCP { using ports : console_request : AdminRequestOPT ; console_session : SessionIPT ; console_dashboard : DashboardViewIPT ; configResult : AdminResultIPT ; }
 				gateway : PaymentGatewayCP { using ports : gateway_call : GatewayCallIPT ; gateway_reply : GatewayReplyOPT ; }
 				notifier : NotificationServiceCP { using ports : notifier_call : NotificationCallIPT ; }
-				turnstileAd : DeviceAdapterCP { using ports : turnstileAd_deviceRead : DeviceReadIPT ; turnstileAd_decision : DecisionIPT ; turnstileAd_config : ConfigSnapshotIPT ; turnstileAd_deviceCommand : DeviceCommandOPT ; turnstileAd_readEvent : ReadEventOPT ; }
-				pgateAd : DeviceAdapterCP { using ports : pgateAd_deviceRead : DeviceReadIPT ; pgateAd_decision : DecisionIPT ; pgateAd_config : ConfigSnapshotIPT ; pgateAd_deviceCommand : DeviceCommandOPT ; pgateAd_readEvent : ReadEventOPT ; }
-				lockerAd : DeviceAdapterCP { using ports : lockerAd_deviceRead : DeviceReadIPT ; lockerAd_decision : DecisionIPT ; lockerAd_config : ConfigSnapshotIPT ; lockerAd_deviceCommand : DeviceCommandOPT ; lockerAd_readEvent : ReadEventOPT ; }
-				creaderAd : ReadOnlyAdapterCP { using ports : creaderAd_deviceRead : DeviceReadIPT ; creaderAd_config : ConfigSnapshotIPT ; creaderAd_readEvent : ReadEventOPT ; }
-				accessCtl : AccessControlCP { using ports : attempt : ReadEventIPT ; accessCtl_ticketResult : TicketCheckResultIPT ; lockerStatus : LockerStatusResultIPT ; accessCtl_config : ConfigSnapshotIPT ; accessCtl_decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; lockerQuery : LockerStatusQueryOPT ; accessCtl_accessEvent : AccessEventOPT ; accessCtl_occupancy : OccupancyStateOPT ; }
-				ticketing : TicketingServiceCP { using ports : orderApp : TicketOrderIPT ; orderKiosk : TicketOrderIPT ; checkRequest : TicketCheckRequestIPT ; ticketing_dispenseRequest : DispenseRequestIPT ; ticketing_lostReport : LostReportIPT ; ticketing_paymentResult : PaymentResultIPT ; ticketing_config : ConfigSnapshotIPT ; orderResultApp : TicketOrderResultOPT ; orderResultKiosk : TicketOrderResultOPT ; checkResult : TicketCheckResultOPT ; ticketing_dispenseDecision : DispenseDecisionOPT ; ticketing_transfer : CredentialTransferOPT ; ticketing_profile : CredentialProfileOPT ; ticketing_paymentRequest : PaymentRequestOPT ; ticketing_notification : NotificationRequestOPT ; ticketing_events : DomainEventOPT ; }
-				priorityQ : PriorityQueueCP { using ports : gateRead : ReadEventIPT ; visitRead : ReadEventIPT ; priorityQ_accessEvent : AccessEventIPT ; priorityQ_transfer : CredentialTransferIPT ; priorityQ_config : ConfigSnapshotIPT ; priorityQ_decision : DecisionOPT ; priorityQ_credits : CreditsViewOPT ; priorityQ_history : VisitHistoryOPT ; priorityQ_events : DomainEventOPT ; }
-				wallet : WalletCP { using ports : wallet_purchase : PurchaseRequestIPT ; operation : WalletOperationIPT ; wallet_charge : ChargeRequestIPT ; wallet_paymentResult : PaymentResultIPT ; wallet_profile : CredentialProfileIPT ; wallet_transfer : CredentialTransferIPT ; wallet_config : ConfigSnapshotIPT ; purchaseResult : PurchaseResultOPT ; wallet_view : WalletViewOPT ; wallet_chargeResult : ChargeResultOPT ; wallet_paymentRequest : PaymentRequestOPT ; wallet_events : DomainEventOPT ; }
-				lockerSvc : LockerServiceCP { using ports : lockerSvc_read : ReadEventIPT ; lockerSvc_request : LockerRequestIPT ; statusQuery : LockerStatusQueryIPT ; lockerSvc_chargeResult : ChargeResultIPT ; lockerSvc_transfer : CredentialTransferIPT ; lockerSvc_command : AuthorizedCommandIPT ; lockerSvc_config : ConfigSnapshotIPT ; lockerSvc_decision : DecisionOPT ; lockerSvc_view : LockerViewOPT ; statusResult : LockerStatusResultOPT ; lockerSvc_charge : ChargeRequestOPT ; lockerSvc_events : DomainEventOPT ; adminResult : AdminResultOPT ; }
-				monitoring : MonitoringServiceCP { using ports : monitoring_occupancy : OccupancyStateIPT ; accessEvents : AccessEventIPT ; priorityEvents : DomainEventIPT ; monitoring_ticketEvents : DomainEventIPT ; monitoring_walletEvents : DomainEventIPT ; monitoring_lockerEvents : DomainEventIPT ; monitoring_command : AuthorizedCommandIPT ; monitoring_dashboard : DashboardViewOPT ; monitoring_notification : NotificationRequestOPT ; }
-				cfgSvc : ConfigurationServiceCP { using ports : cfgSvc_command : AuthorizedCommandIPT ; cfgSvc_config : ConfigSnapshotOPT ; cfgSvc_result : AdminResultOPT ; }
-				iam : IdentityAccessCP { using ports : iam_request : AdminRequestIPT ; iam_session : SessionOPT ; iam_command : AuthorizedCommandOPT ; iam_events : DomainEventOPT ; }
-				auditLog : AuditLogCP { using ports : auditLog_ticketEvents : DomainEventIPT ; auditLog_walletEvents : DomainEventIPT ; auditLog_lockerEvents : DomainEventIPT ; adminEvents : DomainEventIPT ; }
-				payAd : PaymentGatewayAdapterCP { using ports : walletRequest : PaymentRequestIPT ; ticketRequest : PaymentRequestIPT ; payAd_reply : GatewayReplyIPT ; walletResult : PaymentResultOPT ; payAd_ticketResult : PaymentResultOPT ; payAd_call : GatewayCallOPT ; }
-				notifAd : NotificationAdapterCP { using ports : fromMonitoring : NotificationRequestIPT ; fromTicketing : NotificationRequestIPT ; notifAd_call : NotificationCallOPT ; }
+				accessSub : ParkAccessSubsystemCP { using ports : deviceRead : DeviceReadIPT ; accessSub_deviceCommand : DeviceCommandOPT ; accessSub_config : ConfigSnapshotIPT ; ticketQuery : TicketCheckRequestOPT ; ticketResult : TicketCheckResultIPT ; accessSub_accessEvent : AccessEventOPT ; accessSub_occupancy : OccupancyStateOPT ; }
+				queueSub : PriorityQueueSubsystemCP { using ports : pgateAd_deviceRead : DeviceReadIPT ; creaderAd_deviceRead : DeviceReadIPT ; queueSub_deviceCommand : DeviceCommandOPT ; queueSub_config : ConfigSnapshotIPT ; queueSub_accessEvent : AccessEventIPT ; queueSub_credits : CreditsViewOPT ; queueSub_history : VisitHistoryOPT ; queueSub_events : DomainEventOPT ; queueSub_transfer : CredentialTransferIPT ; }
+				ticketSub : TicketingSubsystemCP { using ports : ticketSub_config : ConfigSnapshotIPT ; checkRequest : TicketCheckRequestIPT ; checkResult : TicketCheckResultOPT ; orderApp : TicketOrderIPT ; orderKiosk : TicketOrderIPT ; orderResultApp : TicketOrderResultOPT ; orderResultKiosk : TicketOrderResultOPT ; ticketSub_dispenseRequest : DispenseRequestIPT ; ticketSub_dispenseDecision : DispenseDecisionOPT ; ticketSub_lostReport : LostReportIPT ; ticketSub_transfer : CredentialTransferOPT ; notification : NotificationRequestOPT ; ticketSub_events : DomainEventOPT ; ticketSub_call : GatewayCallOPT ; ticketSub_reply : GatewayReplyIPT ; }
+				opsSub : OperationsSubsystemCP { using ports : opsSub_config : ConfigSnapshotOPT ; accessEvents : AccessEventIPT ; opsSub_occupancy : OccupancyStateIPT ; priorityEvents : DomainEventIPT ; fromTicketing : NotificationRequestIPT ; ticketEvents : DomainEventIPT ; opsSub_request : AdminRequestIPT ; opsSub_session : SessionOPT ; result : AdminResultOPT ; opsSub_dashboard : DashboardViewOPT ; opsSub_call : NotificationCallOPT ; }
 			connectors :
 				c1 : CredentialCN bindings credential = turnstile_rfid ;
 				c2 : CredentialCN bindings credential = pgate_rfid ;
 				c3 : CredentialCN bindings credential = creader_rfid ;
-				c4 : CredentialCN bindings credential = lockerUnit_rfid ;
-				c5 : CredentialCN bindings credential = pos_rfid ;
-				c6 : CredentialCN bindings app_qr = turnstile_qr ;
-				c7 : CredentialCN bindings app_qr = pgate_qr ;
-				c8 : CredentialCN bindings app_qr = kiosk_qr ;
-				c9 : DeviceReadCN bindings turnstile_read = turnstileAd_deviceRead ;
-				c10 : DeviceReadCN bindings pgate_read = pgateAd_deviceRead ;
-				c11 : DeviceReadCN bindings creader_read = creaderAd_deviceRead ;
-				c12 : DeviceReadCN bindings lockerUnit_read = lockerAd_deviceRead ;
-				c13 : DeviceCommandCN bindings turnstileAd_deviceCommand = turnstile_command ;
-				c14 : DeviceCommandCN bindings pgateAd_deviceCommand = pgate_command ;
-				c15 : DeviceCommandCN bindings lockerAd_deviceCommand = lockerUnit_command ;
-				c16 : ReadEventCN bindings turnstileAd_readEvent = attempt ;
-				c17 : ReadEventCN bindings pgateAd_readEvent = gateRead ;
-				c18 : ReadEventCN bindings creaderAd_readEvent = visitRead ;
-				c19 : ReadEventCN bindings lockerAd_readEvent = lockerSvc_read ;
-				c20 : DecisionCN bindings accessCtl_decision = turnstileAd_decision ;
-				c21 : DecisionCN bindings priorityQ_decision = pgateAd_decision ;
-				c22 : DecisionCN bindings lockerSvc_decision = lockerAd_decision ;
-				c23 : ConfigSnapshotCN bindings cfgSvc_config = accessCtl_config ;
-				c24 : ConfigSnapshotCN bindings cfgSvc_config = priorityQ_config ;
-				c25 : ConfigSnapshotCN bindings cfgSvc_config = wallet_config ;
-				c26 : ConfigSnapshotCN bindings cfgSvc_config = ticketing_config ;
-				c27 : ConfigSnapshotCN bindings cfgSvc_config = lockerSvc_config ;
-				c28 : ConfigSnapshotCN bindings cfgSvc_config = turnstileAd_config ;
-				c29 : ConfigSnapshotCN bindings cfgSvc_config = pgateAd_config ;
-				c30 : ConfigSnapshotCN bindings cfgSvc_config = lockerAd_config ;
-				c31 : ConfigSnapshotCN bindings cfgSvc_config = creaderAd_config ;
-				c32 : TicketCheckRequestCN bindings ticketQuery = checkRequest ;
-				c33 : TicketCheckResultCN bindings checkResult = accessCtl_ticketResult ;
-				c34 : LockerStatusQueryCN bindings lockerQuery = statusQuery ;
-				c35 : LockerStatusResultCN bindings statusResult = lockerStatus ;
-				c36 : AccessEventCN bindings accessCtl_accessEvent = priorityQ_accessEvent ;
-				c37 : AccessEventCN bindings accessCtl_accessEvent = accessEvents ;
-				c38 : OccupancyStateCN bindings accessCtl_occupancy = monitoring_occupancy ;
-				c39 : CreditsViewCN bindings priorityQ_credits = app_credits ;
-				c40 : VisitHistoryCN bindings priorityQ_history = app_history ;
-				c41 : DomainEventCN bindings priorityQ_events = priorityEvents ;
-				c42 : TicketOrderCN bindings app_order = orderApp ;
-				c43 : TicketOrderCN bindings kiosk_order = orderKiosk ;
-				c44 : TicketOrderResultCN bindings orderResultApp = app_orderResult ;
-				c45 : TicketOrderResultCN bindings orderResultKiosk = kiosk_orderResult ;
-				c46 : DispenseRequestCN bindings kiosk_dispenseRequest = ticketing_dispenseRequest ;
-				c47 : DispenseDecisionCN bindings ticketing_dispenseDecision = kiosk_dispenseDecision ;
-				c48 : LostReportCN bindings app_lostReport = ticketing_lostReport ;
-				c49 : CredentialTransferCN bindings ticketing_transfer = wallet_transfer ;
-				c50 : CredentialTransferCN bindings ticketing_transfer = priorityQ_transfer ;
-				c51 : CredentialTransferCN bindings ticketing_transfer = lockerSvc_transfer ;
-				c52 : CredentialProfileCN bindings ticketing_profile = wallet_profile ;
-				c53 : PaymentRequestCN bindings ticketing_paymentRequest = ticketRequest ;
-				c54 : PaymentResultCN bindings payAd_ticketResult = ticketing_paymentResult ;
-				c55 : NotificationRequestCN bindings ticketing_notification = fromTicketing ;
-				c56 : DomainEventCN bindings ticketing_events = monitoring_ticketEvents ;
-				c57 : DomainEventCN bindings ticketing_events = auditLog_ticketEvents ;
-				c58 : PurchaseRequestCN bindings pos_purchase = wallet_purchase ;
-				c59 : PurchaseResultCN bindings purchaseResult = pos_result ;
-				c60 : WalletOperationCN bindings walletOperation = operation ;
-				c61 : WalletViewCN bindings wallet_view = walletView ;
-				c62 : ChargeRequestCN bindings lockerSvc_charge = wallet_charge ;
-				c63 : ChargeResultCN bindings wallet_chargeResult = lockerSvc_chargeResult ;
-				c64 : PaymentRequestCN bindings wallet_paymentRequest = walletRequest ;
-				c65 : PaymentResultCN bindings walletResult = wallet_paymentResult ;
-				c66 : DomainEventCN bindings wallet_events = monitoring_walletEvents ;
-				c67 : DomainEventCN bindings wallet_events = auditLog_walletEvents ;
-				c68 : GatewayCallCN bindings payAd_call = gateway_call ;
-				c69 : GatewayReplyCN bindings gateway_reply = payAd_reply ;
-				c70 : LockerRequestCN bindings lockerRequest = lockerSvc_request ;
-				c71 : LockerViewCN bindings lockerSvc_view = lockerView ;
-				c72 : DomainEventCN bindings lockerSvc_events = monitoring_lockerEvents ;
-				c73 : DomainEventCN bindings lockerSvc_events = auditLog_lockerEvents ;
-				c74 : AdminResultCN bindings adminResult = lockerResult ;
-				c75 : AdminRequestCN bindings console_request = iam_request ;
-				c76 : SessionCN bindings iam_session = console_session ;
-				c77 : AuthorizedCommandCN bindings iam_command = cfgSvc_command ;
-				c78 : AuthorizedCommandCN bindings iam_command = lockerSvc_command ;
-				c79 : AuthorizedCommandCN bindings iam_command = monitoring_command ;
-				c80 : DomainEventCN bindings iam_events = adminEvents ;
-				c81 : AdminResultCN bindings cfgSvc_result = configResult ;
-				c82 : DashboardViewCN bindings monitoring_dashboard = console_dashboard ;
-				c83 : NotificationRequestCN bindings monitoring_notification = fromMonitoring ;
-				c84 : NotificationCallCN bindings notifAd_call = notifier_call ;
+				c4 : CredentialCN bindings app_qr = turnstile_qr ;
+				c5 : CredentialCN bindings app_qr = pgate_qr ;
+				c6 : CredentialCN bindings app_qr = kiosk_qr ;
+				c7 : DeviceReadCN bindings turnstile_read = deviceRead ;
+				c8 : DeviceReadCN bindings pgate_read = pgateAd_deviceRead ;
+				c9 : DeviceReadCN bindings creader_read = creaderAd_deviceRead ;
+				c10 : DeviceCommandCN bindings accessSub_deviceCommand = turnstile_command ;
+				c11 : DeviceCommandCN bindings queueSub_deviceCommand = pgate_command ;
+				c12 : ConfigSnapshotCN bindings opsSub_config = accessSub_config ;
+				c13 : ConfigSnapshotCN bindings opsSub_config = queueSub_config ;
+				c14 : ConfigSnapshotCN bindings opsSub_config = ticketSub_config ;
+				c15 : TicketCheckRequestCN bindings ticketQuery = checkRequest ;
+				c16 : TicketCheckResultCN bindings checkResult = ticketResult ;
+				c17 : AccessEventCN bindings accessSub_accessEvent = queueSub_accessEvent ;
+				c18 : AccessEventCN bindings accessSub_accessEvent = accessEvents ;
+				c19 : OccupancyStateCN bindings accessSub_occupancy = opsSub_occupancy ;
+				c20 : CreditsViewCN bindings queueSub_credits = app_credits ;
+				c21 : VisitHistoryCN bindings queueSub_history = app_history ;
+				c22 : DomainEventCN bindings queueSub_events = priorityEvents ;
+				c23 : TicketOrderCN bindings app_order = orderApp ;
+				c24 : TicketOrderCN bindings kiosk_order = orderKiosk ;
+				c25 : TicketOrderResultCN bindings orderResultApp = app_orderResult ;
+				c26 : TicketOrderResultCN bindings orderResultKiosk = kiosk_orderResult ;
+				c27 : DispenseRequestCN bindings kiosk_dispenseRequest = ticketSub_dispenseRequest ;
+				c28 : DispenseDecisionCN bindings ticketSub_dispenseDecision = kiosk_dispenseDecision ;
+				c29 : LostReportCN bindings app_lostReport = ticketSub_lostReport ;
+				c30 : CredentialTransferCN bindings ticketSub_transfer = queueSub_transfer ;
+				c31 : NotificationRequestCN bindings notification = fromTicketing ;
+				c32 : DomainEventCN bindings ticketSub_events = ticketEvents ;
+				c33 : GatewayCallCN bindings ticketSub_call = gateway_call ;
+				c34 : GatewayReplyCN bindings gateway_reply = ticketSub_reply ;
+				c35 : AdminRequestCN bindings console_request = opsSub_request ;
+				c36 : SessionCN bindings opsSub_session = console_session ;
+				c37 : AdminResultCN bindings result = configResult ;
+				c38 : DashboardViewCN bindings opsSub_dashboard = console_dashboard ;
+				c39 : NotificationCallCN bindings opsSub_call = notifier_call ;
 		}
 	}
 }
