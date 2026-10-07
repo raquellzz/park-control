@@ -712,35 +712,25 @@ Requirement TicketsAndIdentifiers ( 2 ) {
     text = "FR2.2 - The system shall bind each ticket to an identifier (passive RFID/NFC wristband or QR code in the app)."
     satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
-  Requirement BirthDateRecord ( 2.3 ) {
-    text = "FR2.3 - The system shall record the visitor's date of birth in their profile, used for purchase restrictions."
-    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
-    derive PaymentsAndPurchases.AlcoholBlockForMinors ;
-  }
-  Requirement MinorGuardianLink ( 2.4 ) {
-    text = "FR2.4 - The system shall allow minors' wristbands to be linked to a guardian."
+  Requirement BlockAndTransferViaDispenser ( 2.3 ) {
+    text = "FR2.3 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the same items listed in FR2.5."
     satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
-  Requirement BlockAndTransferViaDispenser ( 2.5 ) {
-    text = "FR2.5 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the same items listed in FR2.7."
-    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
-  }
-  Requirement WristbandDispensing ( 2.6 ) {
-    text = "FR2.6 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.5), binding the wristband to that ticket."
+  Requirement WristbandDispensing ( 2.4 ) {
+    text = "FR2.4 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.3), binding the wristband to that ticket."
     satisfied by ParkControl.componentdefs.DispenserKioskCP ;
   }
-  
-  Requirement AssistedWristbandReplacement ( 2.7 ) {
-    text = "FR2.7 - The system shall allow an authenticated attendant to block a lost wristband and encode a new one for the visitor, after confirming their identity through the app or a photo ID, transferring the ticket, remaining priority queue credits, balance, linked card, rented locker, guardian links and in-park presence status (so that anti-passback is not violated)."
+  Requirement AssistedWristbandReplacement ( 2.5 ) {
+    text = "FR2.5 - The system shall allow an authenticated attendant to block a lost wristband and encode a new one for the visitor, after confirming their identity through the app or a photo ID, transferring the ticket, remaining priority queue credits and in-park presence status."
     // PENDENTE: nenhum componente grava a pulseira nova (falta o terminal de atendimento)
   }
-  Requirement BlockedWristbandRejection ( 2.8 ) {
-    text = "FR2.8 - Turnstiles, gates, lockers and points of sale shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
-    // PENDENTE: nenhum componente cita o RF2.8; candidatos: AccessDecisionCP, CreditManagerCP, LockerServiceCP, PurchasePolicyCP, DeviceAdapterCP
+  Requirement BlockedWristbandRejection ( 2.6 ) {
+    text = "FR2.6 - Turnstiles and priority gates shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
+    // PENDENTE: nenhum componente cita este requisito; candidatos: AccessDecisionCP, CreditManagerCP, DeviceAdapterCP
     derive TicketsAndIdentifiers.AssistedWristbandReplacement, TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
   }
-  Requirement ReplacementRecord ( 2.9 ) {
-    text = "FR2.9 - The system shall record every wristband replacement with the responsible attendant, timestamp, old and new identifiers and the transferred items."
+  Requirement ReplacementRecord ( 2.7 ) {
+    text = "FR2.7 - The system shall record every wristband replacement with the responsible attendant, timestamp, old and new identifiers and the transferred items."
     // PENDENTE: AuditLogCP não registra reposições de pulseira; candidato: AuditLogCP
     derive TicketsAndIdentifiers.BlockAndTransferViaDispenser, TicketsAndIdentifiers.AssistedWristbandReplacement ;
   }
@@ -785,191 +775,50 @@ Requirement PriorityQueuesAndAttractionLog ( 3 ) {
   }
 }
 
-Requirement PaymentsAndPurchases ( 4 ) {
-  text = "FR4 - The system shall manage the digital wallet and wristband payments."
-  satisfied by ParkControl.componentdefs.WalletCP ;
+Requirement MonitoringConfigurationReports ( 4 ) {
+  text = "FR4 - The system shall provide operational monitoring, configuration and reports."
 
-  Requirement BalanceTopUp ( 4.1 ) {
-    text = "FR4.1 - The system shall allow the prepaid wristband balance to be topped up through the app, via Pix, debit or credit."
-    satisfied by ParkControl.componentdefs.LedgerCP ;
-  }
-  Requirement CardLinking ( 4.2 ) {
-    text = "FR4.2 - The system shall allow a credit or debit card to be linked through the app, tokenized by the gateway, so that the wristband works as a contactless payment method."
-    satisfied by ParkControl.componentdefs.PurchasePolicyCP ;
-  }
-  Requirement PointOfSaleCharge ( 4.3 ) {
-    text = "FR4.3 - At the point of sale, the system shall debit the prepaid balance or charge the linked card, refusing the purchase if there is not enough balance or no card authorization."
-    satisfied by ParkControl.componentdefs.PurchasePolicyCP ;
-  }
-  Requirement AlcoholBlockForMinors ( 4.4 ) {
-    text = "FR4.4 - The system shall block the sale of alcoholic beverages to identifiers of visitors under 18."
-    satisfied by ParkControl.componentdefs.PurchasePolicyCP ;
-  }
-  Requirement BalanceRefund ( 4.5 ) {
-    text = "FR4.5 - The system shall allow the remaining prepaid balance to be refunded through the app when leaving the park."
-    satisfied by ParkControl.componentdefs.LedgerCP ;
-  }
-  Requirement MinorSpendingLimit ( 4.6 ) {
-    text = "FR4.6 - The system shall allow the guardian to set a spending limit for the wristbands of linked minors."
-    satisfied by ParkControl.componentdefs.PurchasePolicyCP ;
-  }
-}
-
-Requirement Lockers ( 5 ) {
-  text = "FR5 - The system shall manage locker rental and opening."
-
-  Requirement LockerRental ( 5.1 ) {
-    text = "FR5.1 - The system shall allow a locker to be rented through the app (choosing size and area), binding it to the ticket's own wristband and charging the wallet."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-  Requirement UnlockWithBoundIdentifier ( 5.2 ) {
-    text = "FR5.2 - The system shall unlock the locker only when reading the identifier bound to it."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-  Requirement UnlimitedOpenings ( 5.3 ) {
-    text = "FR5.3 - The system shall allow unlimited locker openings during the rental period."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-  Requirement RentalTermination ( 5.4 ) {
-    text = "FR5.4 - The system shall end the rental when the visitor releases the locker in the app, unbinding the identifier."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-  Requirement LockerWarningAtExit ( 5.5 ) {
-    text = "FR5.5 - When recording the exit of a visitor whose locker is still bound, the turnstile shall warn them and ask for confirmation before allowing the exit."
-    satisfied by ParkControl.componentdefs.AccessDecisionCP ;
-  }
-  Requirement AssistedOpening ( 5.6 ) {
-    text = "FR5.6 - The system shall allow an assisted opening by an authenticated attendant, recording the event, when the identifier is lost or blocked."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-  Requirement LockerAvailability ( 5.7 ) {
-    text = "FR5.7 - The system shall display locker availability by area and size in the app."
-    satisfied by ParkControl.componentdefs.LockerServiceCP ;
-  }
-}
-
-Requirement MonitoringConfigurationReports ( 6 ) {
-  text = "FR6 - The system shall provide operational monitoring, configuration and reports."
-  // PENDENTE: grupo atendido por vários serviços, sem composto único
-
-  Requirement OperationsDashboard ( 6.1 ) {
-    text = "FR6.1 - The system shall display a dashboard with occupancy, priority queue usage, lockers and alarms in real time."
+  Requirement OperationsDashboard ( 4.1 ) {
+    text = "FR4.1 - The system shall display a dashboard with occupancy, priority queue usage and alarms in real time."
     satisfied by ParkControl.componentdefs.MonitoringServiceCP ;
   }
-  Requirement AttractionAndReaderSetup ( 6.2 ) {
-    text = "FR6.2 - The system shall allow attractions and their readers (priority gate and optional regular queue reader) to be registered."
+  Requirement AttractionAndReaderSetup ( 4.2 ) {
+    text = "FR4.2 - The system shall allow attractions and their readers (priority gate and optional regular queue reader) to be registered."
     satisfied by ParkControl.componentdefs.ConfigurationServiceCP ;
   }
-  Requirement ParkConfiguration ( 6.3 ) {
-    text = "FR6.3 - The system shall allow ticket types, priority queue credits, fees, opening hours, maximum occupancy and lockers to be configured."
+  Requirement ParkConfiguration ( 4.3 ) {
+    text = "FR4.3 - The system shall allow ticket types, priority queue credits, fees, opening hours and maximum occupancy to be configured."
     satisfied by ParkControl.componentdefs.ConfigurationServiceCP ;
   }
-  Requirement Reports ( 6.4 ) {
-    text = "FR6.4 - The system shall generate reports on visitors, sales, most visited attractions, priority queue usage, locker usage and incidents per period."
+  Requirement Reports ( 4.4 ) {
+    text = "FR4.4 - The system shall generate reports on visitors, ticket sales, most visited attractions, priority queue usage and incidents per period."
     satisfied by ParkControl.componentdefs.MonitoringServiceCP ;
   }
 }
 
-Requirement Performance ( 7 ) {
-  text = "NFR1 - Performance requirements."
+Requirement Quality ( 5 ) {
+  text = "NFR - The system shall satisfy performance, fault tolerance, scalability, modifiability, security and traceability concerns."
 
-  Requirement AccessDecisionTime ( 7.1 ) {
-    text = "NFR1.1 - The decision to unlock or keep locked a turnstile, priority gate or locker shall be made within 500 ms after the identifier is read."
+  Requirement AccessDecisionTime ( 5.1 ) {
+    text = "NFR1 - Performance: the decision to unlock or keep locked a turnstile or priority gate shall be made within 500 ms after the identifier is read."
     satisfied by ParkControl.componentdefs.DeviceAdapterCP ;
   }
-  Requirement PurchaseTime ( 7.2 ) {
-    text = "NFR1.2 - A point-of-sale purchase, including linked card authorization, shall be completed within 2 s."
-    // PENDENTE: qualidade do sistema inteiro: verificar por análise na Parte 2
-  }
-}
-
-Requirement Availability ( 8 ) {
-  text = "NFR2 - Availability and fault tolerance requirements."
-
-  Requirement ServiceAvailability ( 8.1 ) {
-    text = "NFR2.1 - The access, priority queue, wallet and app services shall have 99.9% availability during opening hours."
-    // PENDENTE: qualidade do sistema inteiro: verificar por análise na Parte 2
-  }
-  Requirement OfflineOperation ( 8.2 ) {
-    text = "NFR2.2 - Turnstiles, gates, lockers and points of sale shall keep operating for up to 4 h without a connection to the central server, synchronizing records upon reconnection. While offline, points of sale accept only prepaid balance."
+  Requirement OfflineOperation ( 5.2 ) {
+    text = "NFR2 - Fault tolerance: turnstiles and priority gates shall keep operating with local rules when the connection to the central server is lost, synchronizing their records upon reconnection."
     satisfied by ParkControl.componentdefs.DeviceAdapterCP ;
   }
-}
-
-Requirement Scalability ( 9 ) {
-  text = "NFR3 - Scalability requirements."
-
-  Requirement ConcurrentVisitors ( 9.1 ) {
-    text = "NFR3.1 - The system shall support 500 to 50,000 concurrent visitors per park just by adding service instances, without code changes."
-    // PENDENTE: qualidade do sistema inteiro: verificar por análise na Parte 2
+  Requirement ScaleByInstances ( 5.3 ) {
+    text = "NFR3 - Scalability: the same architecture shall serve from a small park to a theme park (at least 200 identifier readers and 100 attractions) by changing only the number of device and service instances, without changing components."
   }
-  Requirement DeviceCapacity ( 9.2 ) {
-    text = "NFR3.2 - The system shall support at least 200 identifier readers, 100 attractions and 2,000 lockers per park."
-    // PENDENTE: qualidade do sistema inteiro: verificar por análise na Parte 2
-  }
-}
-
-Requirement Modifiability ( 10 ) {
-  text = "NFR4 - Modifiability and configurability requirements."
-
-  Requirement NewDeviceThroughAdapter ( 10.1 ) {
-    text = "NFR4.1 - A new device type (turnstile, reader or lock from another manufacturer) shall be integrated by creating an adapter, without changing the other components."
-    satisfied by ParkControl.componentdefs.DeviceAdapterCP ;
-  }
-  Requirement NewPaymentOrIdentifierType ( 10.2 ) {
-    text = "NFR4.2 - A new payment method or identifier type shall be added without changing the access and purchase core."
-    satisfied by ParkControl.componentdefs.PaymentGatewayAdapterCP ;
-  }
-  Requirement ProfilesThroughConfiguration ( 10.3 ) {
-    text = "NFR4.3 - The installation profiles of section 3.1 shall be obtained through configuration only."
-    satisfied by ParkControl.componentdefs.ConfigurationServiceCP ;
-  }
-}
-
-Requirement Security ( 11 ) {
-  text = "NFR5 - Security and privacy requirements."
-
-  Requirement EncryptedCommunication ( 11.1 ) {
-    text = "NFR5.1 - All communication between devices and servers shall be encrypted (TLS 1.3 or equivalent) and devices shall be authenticated."
-    // PENDENTE: vale para todas as conexões: verificar por análise na Parte 2
-  }
-  Requirement NoCardData ( 11.2 ) {
-    text = "NFR5.2 - The system shall not store card data: the linked card is tokenized by a PCI DSS certified gateway, and the wristband stores only an identifier."
-    satisfied by ParkControl.componentdefs.PaymentGatewayAdapterCP ;
-  }
-  Requirement RoleBasedAccess ( 11.3 ) {
-    text = "NFR5.3 - Access to administrative functions, assisted locker opening and wristband replacement shall require authentication and role-based access control (manager, operator, attendant)."
+  Requirement IntegrationThroughAdapters ( 5.4 ) {
+    text = "NFR4 - Modifiability: a new device (turnstile or reader from another manufacturer) or a new external service shall be integrated by creating or replacing an adapter, without changing the other components."
+    satisfied by ParkControl.componentdefs.DeviceAdapterCP, ParkControl.componentdefs.PaymentGatewayAdapterCP ; }
+  Requirement RoleBasedAccess ( 5.5 ) {
+    text = "NFR5 - Security: administrative functions and wristband replacement shall require authentication and role-based authorization (manager, operator, attendant)."
     satisfied by ParkControl.componentdefs.IdentityAccessCP ;
   }
-  Requirement LGPDPrivacy ( 11.4 ) {
-    text = "NFR5.4 - Personal data, minors' data and attraction history shall comply with the LGPD: consent, data minimization and deletion when the purpose ends."
-    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
-  }
-}
-
-Requirement Traceability ( 12 ) {
-  text = "NFR6 - Traceability requirements."
-
-  Requirement ImmutableRecords ( 12.1 ) {
-    text = "NFR6.1 - Records of financial transactions, assisted openings and wristband replacements shall be immutable and kept for at least 5 years."
+  Requirement AuditTrail ( 5.6 ) {
+    text = "NFR6 - Traceability: ticket sales and wristband replacements shall be recorded in an append-only audit log, which cannot be changed after writing."
     satisfied by ParkControl.componentdefs.AuditLogCP ;
-  }
-}
-
-Requirement Portability ( 13 ) {
-  text = "NFR7 - Portability requirements."
-
-  Requirement ContainerExecution ( 13.1 ) {
-    text = "NFR7.1 - Services shall run in containers, on a local server or in a public cloud, without code changes."
-    // PENDENTE: decisão de implantação: verificar na Parte 2
-  }
-}
-
-Requirement Usability ( 14 ) {
-  text = "NFR8 - Usability requirements."
-
-  Requirement TwoTapLookup ( 14.1 ) {
-    text = "NFR8.1 - The visitor shall be able to see their balance, remaining priority queue credits and locker in the app in at most 2 taps."
-    satisfied by ParkControl.componentdefs.VisitorAppCP ;
   }
 }
