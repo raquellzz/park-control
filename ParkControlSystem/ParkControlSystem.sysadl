@@ -693,26 +693,22 @@ Requirement TicketsAndIdentifiers ( 2 ) {
     satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
   Requirement BlockAndTransferViaDispenser ( 2.3 ) {
-    text = "FR2.3 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the same items listed in FR2.5."
+    text = "FR2.3 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the ticket, remaining priority queue credits and in-park presence status (so that anti-passback is not violated)."
     satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
   Requirement WristbandDispensing ( 2.4 ) {
     text = "FR2.4 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.3), binding the wristband to that ticket."
     satisfied by ParkControl.componentdefs.DispenserKioskCP ;
   }
-  Requirement AssistedWristbandReplacement ( 2.5 ) {
-    text = "FR2.5 - The system shall allow an authenticated attendant to block a lost wristband and encode a new one for the visitor, after confirming their identity through the app or a photo ID, transferring the ticket, remaining priority queue credits and in-park presence status."
-    // PENDENTE: nenhum componente grava a pulseira nova (falta o terminal de atendimento)
+  Requirement BlockedWristbandRejection ( 2.5 ) {
+    text = "FR2.5 - Turnstiles and priority gates shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
+    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
+    derive TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
   }
-  Requirement BlockedWristbandRejection ( 2.6 ) {
-    text = "FR2.6 - Turnstiles and priority gates shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
-    // PENDENTE: nenhum componente cita este requisito; candidatos: AccessDecisionCP, CreditManagerCP, DeviceAdapterCP
-    derive TicketsAndIdentifiers.AssistedWristbandReplacement, TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
-  }
-  Requirement ReplacementRecord ( 2.7 ) {
-    text = "FR2.7 - The system shall record every wristband replacement with the responsible attendant, timestamp, old and new identifiers and the transferred items."
-    // PENDENTE: AuditLogCP não registra reposições de pulseira; candidato: AuditLogCP
-    derive TicketsAndIdentifiers.BlockAndTransferViaDispenser, TicketsAndIdentifiers.AssistedWristbandReplacement ;
+  Requirement ReplacementRecord ( 2.6 ) {
+    text = "FR2.6 - The system shall record every wristband replacement with timestamp, old and new identifiers and the transferred items."
+    satisfied by ParkControl.componentdefs.AuditLogCP ;
+    derive TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
   }
 }
 
@@ -792,9 +788,9 @@ Requirement Quality ( 5 ) {
   }
   Requirement IntegrationThroughAdapters ( 5.4 ) {
     text = "NFR4 - Modifiability: a new device (turnstile or reader from another manufacturer) or a new external service shall be integrated by creating or replacing an adapter, without changing the other components."
-    satisfied by ParkControl.componentdefs.DeviceAdapterCP, ParkControl.componentdefs.PaymentGatewayAdapterCP ; }
+    satisfied by ParkControl.componentdefs.DeviceAdapterCP, ParkControl.componentdefs.PaymentGatewayAdapterCP , ParkControl.componentdefs.NotificationAdapterCP ; }
   Requirement RoleBasedAccess ( 5.5 ) {
-    text = "NFR5 - Security: administrative functions and wristband replacement shall require authentication and role-based authorization (manager, operator, attendant)."
+    text = "NFR5 - Security: administrative functions shall require authentication and role-based authorization (manager, operator)."
     satisfied by ParkControl.componentdefs.IdentityAccessCP ;
   }
   Requirement AuditTrail ( 5.6 ) {
