@@ -5,29 +5,679 @@ package SysADL.types {
     value type Boolean { } 
     value type String { } 
     value type Void { } 
-    value type Real { } 
+    value type Real { }
+    
+    dimension Currency
+	unit BRL { dimension = Currency }
+	unit USD { dimension = Currency }
+	unit EUR { dimension = Currency }
+
+	value type Timestamp extends Int { }
+	value type Money extends Real { dimension = Currency }
 }
 
-package ParkControl {
+package ParkControl.types {
+    import SysADL.types ;
 
+	enum IdentifierKind { RFID, NFC, QR }
+	enum DeviceKind { EntryGate, ExitGate, PriorityGate, CommonReader }
+	enum Direction { Entry, Exit }
+	enum Lane { Common, Priority }
+	enum Role { Manager, AttractionOperator, Attendant, Security }
+	enum ReasonCode { Ok, NoValidTicket, OutsideSchedule, ParkFull, Antipassback, BlockedIdentifier, NoCredit, DuplicateRead, CardDeclined, Unauthorized }
 
+    datatype Credential { attributes : identifier : String ; kind : IdentifierKind ; }
+	datatype DeviceRead { attributes : deviceId : String ; credential : Credential ; ts : Timestamp ; }
+	datatype DeviceCommand { attributes : deviceId : String ; release : Boolean ; displayText : String ; }
+	datatype ReadEvent { attributes : deviceId : String ; kind : DeviceKind ; credential : Credential ; ts : Timestamp ; }
+	datatype Decision { attributes : deviceId : String ; release : Boolean ; reason : ReasonCode ; creditsLeft : Int ; }
+	datatype TicketCheckRequest { attributes : deviceId : String ; credential : Credential ; ts : Timestamp ; }
+	datatype TicketCheckResult { attributes : credential : Credential ; valid : Boolean ; reason : ReasonCode ; ticketTypeCode : String ; priorityCredits : Int ; }
+	datatype AccessEvent { attributes : credential : Credential ; direction : Direction ; deviceId : String ; ts : Timestamp ; priorityCredits : Int ; }
+	datatype OccupancyState { attributes : count : Int ; limit : Int ; admitting : Boolean ; }
+	datatype CreditsView { attributes : credential : Credential ; creditsLeft : Int ; }
+	datatype VisitRecord { attributes : credential : Credential ; attractionId : String ; lane : Lane ; ts : Timestamp ; }
+	datatype TicketOrder { attributes : buyerName : String ; ticketTypeCode : String ; visitDate : String ; paymentMethod : String ; cardToken : String ; channel : String ; }
+	datatype TicketOrderResult { attributes : orderId : String ; approved : Boolean ; reason : ReasonCode ; ticketQr : Credential ; }
+	datatype DispenseRequest { attributes : kioskId : String ; ticketQr : Credential ; wristband : Credential ; }
+	datatype DispenseDecision { attributes : kioskId : String ; dispense : Boolean ; reason : ReasonCode ; }
+	datatype LostReport { attributes : lost : Credential ; requesterId : String ; }
+	datatype CredentialTransfer { attributes : oldCredential : Credential ; newCredential : Credential ; block : Boolean ; }
+	datatype PaymentRequest { attributes : orderRef : String ; amount : Money ; method : String ; cardToken : String ; verb : String ; }
+	datatype PaymentResult { attributes : orderRef : String ; approved : Boolean ; reason : ReasonCode ; cardToken : String ; }
+	datatype GatewayCall { attributes : provider : String ; payload : String ; }
+	datatype GatewayReply { attributes : provider : String ; payload : String ; }
+	datatype DomainEvent { attributes : origin : String ; kind : String ; subject : String ; amount : Money ; ts : Timestamp ; }
+	datatype NotificationRequest { attributes : recipient : String ; channel : String ; message : String ; }
+	datatype NotificationCall { attributes : provider : String ; payload : String ; }
+	datatype ConfigItem { attributes : scope : String ; itemKey : String ; itemValue : String ; }
+	datatype AdminRequest { attributes : userId : String ; token : String ; target : String ; verb : String ; payload : String ; }
+	datatype Session { attributes : userId : String ; role : Role ; token : String ; valid : Boolean ; }
+	datatype AuthorizedCommand { attributes : userId : String ; role : Role ; target : String ; verb : String ; payload : String ; }
+	datatype AdminResult { attributes : target : String ; ok : Boolean ; reason : ReasonCode ; payload : String ; }
+	datatype DashboardView { attributes : panel : String ; payload : String ; }
 }
+
+package ParkControl.portdefs {
+	import ParkControl.types ;
+	port def CredentialOPT { flow out Credential }
+	port def CredentialIPT { flow in Credential }
+	port def DeviceReadOPT { flow out DeviceRead }
+	port def DeviceReadIPT { flow in DeviceRead }
+	port def DeviceCommandOPT { flow out DeviceCommand }
+	port def DeviceCommandIPT { flow in DeviceCommand }
+	port def ReadEventOPT { flow out ReadEvent }
+	port def ReadEventIPT { flow in ReadEvent }
+	port def DecisionOPT { flow out Decision }
+	port def DecisionIPT { flow in Decision }
+	port def TicketCheckRequestOPT { flow out TicketCheckRequest }
+	port def TicketCheckRequestIPT { flow in TicketCheckRequest }
+	port def TicketCheckResultOPT { flow out TicketCheckResult }
+	port def TicketCheckResultIPT { flow in TicketCheckResult }
+	port def AccessEventOPT { flow out AccessEvent }
+	port def AccessEventIPT { flow in AccessEvent }
+	port def OccupancyStateOPT { flow out OccupancyState }
+	port def OccupancyStateIPT { flow in OccupancyState }
+	port def CreditsViewOPT { flow out CreditsView }
+	port def CreditsViewIPT { flow in CreditsView }
+	port def VisitRecordOPT { flow out VisitRecord }
+	port def VisitRecordIPT { flow in VisitRecord }
+	port def VisitHistoryOPT { flow out VisitRecord }
+	port def VisitHistoryIPT { flow in VisitRecord }
+	port def TicketOrderOPT { flow out TicketOrder }
+	port def TicketOrderIPT { flow in TicketOrder }
+	port def TicketOrderResultOPT { flow out TicketOrderResult }
+	port def TicketOrderResultIPT { flow in TicketOrderResult }
+	port def DispenseRequestOPT { flow out DispenseRequest }
+	port def DispenseRequestIPT { flow in DispenseRequest }
+	port def DispenseDecisionOPT { flow out DispenseDecision }
+	port def DispenseDecisionIPT { flow in DispenseDecision }
+	port def LostReportOPT { flow out LostReport }
+	port def LostReportIPT { flow in LostReport }
+	port def CredentialTransferOPT { flow out CredentialTransfer }
+	port def CredentialTransferIPT { flow in CredentialTransfer }
+	port def PaymentRequestOPT { flow out PaymentRequest }
+	port def PaymentRequestIPT { flow in PaymentRequest }
+	port def PaymentResultOPT { flow out PaymentResult }
+	port def PaymentResultIPT { flow in PaymentResult }
+	port def GatewayCallOPT { flow out GatewayCall }
+	port def GatewayCallIPT { flow in GatewayCall }
+	port def GatewayReplyOPT { flow out GatewayReply }
+	port def GatewayReplyIPT { flow in GatewayReply }
+	port def DomainEventOPT { flow out DomainEvent }
+	port def DomainEventIPT { flow in DomainEvent }
+	port def NotificationRequestOPT { flow out NotificationRequest }
+	port def NotificationRequestIPT { flow in NotificationRequest }
+	port def NotificationCallOPT { flow out NotificationCall }
+	port def NotificationCallIPT { flow in NotificationCall }
+	port def ConfigSnapshotOPT { flow out ConfigItem }
+	port def ConfigSnapshotIPT { flow in ConfigItem }
+	port def AdminRequestOPT { flow out AdminRequest }
+	port def AdminRequestIPT { flow in AdminRequest }
+	port def SessionOPT { flow out Session }
+	port def SessionIPT { flow in Session }
+	port def AuthorizedCommandOPT { flow out AuthorizedCommand }
+	port def AuthorizedCommandIPT { flow in AuthorizedCommand }
+	port def AdminResultOPT { flow out AdminResult }
+	port def AdminResultIPT { flow in AdminResult }
+	port def DashboardViewOPT { flow out DashboardView }
+	port def DashboardViewIPT { flow in DashboardView }
+	
+}
+
+package ParkControl.connectordefs {
+	import ParkControl.portdefs;
+	connector def CredentialCN {
+		participants : ~ source : CredentialOPT ; ~ destination : CredentialIPT ; flows : Credential from source to destination
+	}
+	connector def DeviceReadCN {
+		participants : ~ source : DeviceReadOPT ; ~ destination : DeviceReadIPT ; flows : DeviceRead from source to destination
+	}
+	connector def DeviceCommandCN {
+		participants : ~ source : DeviceCommandOPT ; ~ destination : DeviceCommandIPT ; flows : DeviceCommand from source to destination
+	}
+	connector def ReadEventCN {
+		participants : ~ source : ReadEventOPT ; ~ destination : ReadEventIPT ; flows : ReadEvent from source to destination
+	}
+	connector def DecisionCN {
+		participants : ~ source : DecisionOPT ; ~ destination : DecisionIPT ; flows : Decision from source to destination
+	}
+	connector def TicketCheckRequestCN {
+		participants : ~ source : TicketCheckRequestOPT ; ~ destination : TicketCheckRequestIPT ; flows : TicketCheckRequest from source to destination
+	}
+	connector def TicketCheckResultCN {
+		participants : ~ source : TicketCheckResultOPT ; ~ destination : TicketCheckResultIPT ; flows : TicketCheckResult from source to destination
+	}
+	connector def AccessEventCN {
+		participants : ~ source : AccessEventOPT ; ~ destination : AccessEventIPT ; flows : AccessEvent from source to destination
+	}
+	connector def OccupancyStateCN {
+		participants : ~ source : OccupancyStateOPT ; ~ destination : OccupancyStateIPT ; flows : OccupancyState from source to destination
+	}
+	connector def CreditsViewCN {
+		participants : ~ source : CreditsViewOPT ; ~ destination : CreditsViewIPT ; flows : CreditsView from source to destination
+	}
+	connector def VisitRecordCN {
+		participants : ~ source : VisitRecordOPT ; ~ destination : VisitRecordIPT ; flows : VisitRecord from source to destination
+	}
+	connector def VisitHistoryCN {
+		participants : ~ source : VisitHistoryOPT ; ~ destination : VisitHistoryIPT ; flows : VisitRecord from source to destination
+	}
+	connector def TicketOrderCN {
+		participants : ~ source : TicketOrderOPT ; ~ destination : TicketOrderIPT ; flows : TicketOrder from source to destination
+	}
+	connector def TicketOrderResultCN {
+		participants : ~ source : TicketOrderResultOPT ; ~ destination : TicketOrderResultIPT ; flows : TicketOrderResult from source to destination
+	}
+	connector def DispenseRequestCN {
+		participants : ~ source : DispenseRequestOPT ; ~ destination : DispenseRequestIPT ; flows : DispenseRequest from source to destination
+	}
+	connector def DispenseDecisionCN {
+		participants : ~ source : DispenseDecisionOPT ; ~ destination : DispenseDecisionIPT ; flows : DispenseDecision from source to destination
+	}
+	connector def LostReportCN {
+		participants : ~ source : LostReportOPT ; ~ destination : LostReportIPT ; flows : LostReport from source to destination
+	}
+	connector def CredentialTransferCN {
+		participants : ~ source : CredentialTransferOPT ; ~ destination : CredentialTransferIPT ; flows : CredentialTransfer from source to destination
+	}
+	connector def PaymentRequestCN {
+		participants : ~ source : PaymentRequestOPT ; ~ destination : PaymentRequestIPT ; flows : PaymentRequest from source to destination
+	}
+	connector def PaymentResultCN {
+		participants : ~ source : PaymentResultOPT ; ~ destination : PaymentResultIPT ; flows : PaymentResult from source to destination
+	}
+	connector def GatewayCallCN {
+		participants : ~ source : GatewayCallOPT ; ~ destination : GatewayCallIPT ; flows : GatewayCall from source to destination
+	}
+	connector def GatewayReplyCN {
+		participants : ~ source : GatewayReplyOPT ; ~ destination : GatewayReplyIPT ; flows : GatewayReply from source to destination
+	}
+	connector def DomainEventCN {
+		participants : ~ source : DomainEventOPT ; ~ destination : DomainEventIPT ; flows : DomainEvent from source to destination
+	}
+	connector def NotificationRequestCN {
+		participants : ~ source : NotificationRequestOPT ; ~ destination : NotificationRequestIPT ; flows : NotificationRequest from source to destination
+	}
+	connector def NotificationCallCN {
+		participants : ~ source : NotificationCallOPT ; ~ destination : NotificationCallIPT ; flows : NotificationCall from source to destination
+	}
+	connector def ConfigSnapshotCN {
+		participants : ~ source : ConfigSnapshotOPT ; ~ destination : ConfigSnapshotIPT ; flows : ConfigItem from source to destination
+	}
+	connector def AdminRequestCN {
+		participants : ~ source : AdminRequestOPT ; ~ destination : AdminRequestIPT ; flows : AdminRequest from source to destination
+	}
+	connector def SessionCN {
+		participants : ~ source : SessionOPT ; ~ destination : SessionIPT ; flows : Session from source to destination
+	}
+	connector def AuthorizedCommandCN {
+		participants : ~ source : AuthorizedCommandOPT ; ~ destination : AuthorizedCommandIPT ; flows : AuthorizedCommand from source to destination
+	}
+	connector def AdminResultCN {
+		participants : ~ source : AdminResultOPT ; ~ destination : AdminResultIPT ; flows : AdminResult from source to destination
+	}
+	connector def DashboardViewCN {
+		participants : ~ source : DashboardViewOPT ; ~ destination : DashboardViewIPT ; flows : DashboardView from source to destination
+	}
+}
+
+package ParkControl.componentdefs {
+	import ParkControl.types;
+	import ParkControl.portdefs;
+	import ParkControl.connectordefs;
+	
+	boundary component def WristbandCP {
+		ports :
+			credential : CredentialOPT ;
+	}
+	boundary component def VisitorAppCP {
+		ports :
+			qr : CredentialOPT ;
+			order : TicketOrderOPT ;
+			lostReport : LostReportOPT ;
+			orderResult : TicketOrderResultIPT ;
+			credits : CreditsViewIPT ;
+			history : VisitHistoryIPT ;
+	}
+	boundary component def DispenserKioskCP {
+		ports :
+			qr : CredentialIPT ;
+			orderResult : TicketOrderResultIPT ;
+			dispenseDecision : DispenseDecisionIPT ;
+			order : TicketOrderOPT ;
+			dispenseRequest : DispenseRequestOPT ;
+	}
+	boundary component def TurnstileCP {
+		ports :
+			rfid : CredentialIPT ;
+			qr : CredentialIPT ;
+			command : DeviceCommandIPT ;
+			read : DeviceReadOPT ;
+	}
+	boundary component def PriorityGateCP {
+		ports :
+			rfid : CredentialIPT ;
+			qr : CredentialIPT ;
+			command : DeviceCommandIPT ;
+			read : DeviceReadOPT ;
+	}
+	boundary component def CommonQueueReaderCP {
+		ports :
+			rfid : CredentialIPT ;
+			read : DeviceReadOPT ;
+	}
+	boundary component def BackofficeConsoleCP {
+		ports :
+			request : AdminRequestOPT ;
+			session : SessionIPT ;
+			dashboard : DashboardViewIPT ;
+			configResult : AdminResultIPT ;
+	}
+	boundary component def PaymentGatewayCP {
+		ports :
+			call : GatewayCallIPT ;
+			reply : GatewayReplyOPT ;
+	}
+	boundary component def NotificationServiceCP {
+		ports :
+			call : NotificationCallIPT ;
+	}
+
+	component def DeviceAdapterCP {
+		ports :
+			deviceRead : DeviceReadIPT ;
+			decision : DecisionIPT ;
+			config : ConfigSnapshotIPT ;
+			deviceCommand : DeviceCommandOPT ;
+			readEvent : ReadEventOPT ;
+	}
+	component def ReadOnlyAdapterCP {
+		ports :
+			deviceRead : DeviceReadIPT ;
+			config : ConfigSnapshotIPT ;
+			readEvent : ReadEventOPT ;
+	}
+
+	component def AccessDecisionCP {
+		ports :
+			attempt : ReadEventIPT ;
+			ticketResult : TicketCheckResultIPT ;
+			rules : ConfigSnapshotIPT ;
+			occupancyState : OccupancyStateIPT ;
+			decision : DecisionOPT ;
+			ticketQuery : TicketCheckRequestOPT ;
+			accessEvent : AccessEventOPT ;
+			accessEventCount : AccessEventOPT ;
+	}
+	component def OccupancyControllerCP {
+		ports :
+			accessEvent : AccessEventIPT ;
+			capacity : ConfigSnapshotIPT ;
+			occupancyFeedback : OccupancyStateOPT ;
+			occupancy : OccupancyStateOPT ;
+	}
+	component def CreditManagerCP {
+		ports :
+			gateRead : ReadEventIPT ;
+			access : AccessEventIPT ;
+			transfer : CredentialTransferIPT ;
+			config : ConfigSnapshotIPT ;
+			decision : DecisionOPT ;
+			credits : CreditsViewOPT ;
+			visit : VisitRecordOPT ;
+			events : DomainEventOPT ;
+	}
+	component def VisitLogCP {
+		ports :
+			visit : VisitRecordIPT ;
+			visitRead : ReadEventIPT ;
+			history : VisitHistoryOPT ;
+	}
+
+	component def AccessControlCP {
+		ports :
+			attempt : ReadEventIPT ;
+			ticketResult : TicketCheckResultIPT ;
+			config : ConfigSnapshotIPT ;
+			decision : DecisionOPT ;
+			ticketQuery : TicketCheckRequestOPT ;
+			accessEvent : AccessEventOPT ;
+			occupancy : OccupancyStateOPT ;
+		configuration {
+			components :
+				ad : AccessDecisionCP { using ports : attempt : ReadEventIPT ; ticketResult : TicketCheckResultIPT ; rules : ConfigSnapshotIPT ; occupancyState : OccupancyStateIPT ; decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; ad_accessEvent : AccessEventOPT ; accessEventCount : AccessEventOPT ; }
+				oc : OccupancyControllerCP { using ports : oc_accessEvent : AccessEventIPT ; capacity : ConfigSnapshotIPT ; occupancyFeedback : OccupancyStateOPT ; occupancy : OccupancyStateOPT ; }
+			connectors :
+				k1 : AccessEventCN bindings accessEventCount = oc_accessEvent ;
+				k2 : OccupancyStateCN bindings occupancyFeedback = occupancyState ;
+			delegations :
+				attempt to attempt
+				ticketResult to ticketResult
+				rules to config
+				capacity to config
+				decision to decision
+				ticketQuery to ticketQuery
+				ad_accessEvent to accessEvent
+				occupancy to occupancy
+		}
+	}
+	component def PriorityQueueCP {
+		ports :
+			gateRead : ReadEventIPT ;
+			visitRead : ReadEventIPT ;
+			accessEvent : AccessEventIPT ;
+			transfer : CredentialTransferIPT ;
+			config : ConfigSnapshotIPT ;
+			decision : DecisionOPT ;
+			credits : CreditsViewOPT ;
+			history : VisitHistoryOPT ;
+			events : DomainEventOPT ;
+		configuration {
+			components :
+				cm : CreditManagerCP { using ports : gateRead : ReadEventIPT ; access : AccessEventIPT ; transfer : CredentialTransferIPT ; config : ConfigSnapshotIPT ; decision : DecisionOPT ; credits : CreditsViewOPT ; cm_visit : VisitRecordOPT ; events : DomainEventOPT ; }
+				vl : VisitLogCP { using ports : vl_visit : VisitRecordIPT ; visitRead : ReadEventIPT ; history : VisitHistoryOPT ; }
+			connectors :
+				k1 : VisitRecordCN bindings cm_visit = vl_visit ;
+			delegations :
+				gateRead to gateRead
+				visitRead to visitRead
+				access to accessEvent
+				transfer to transfer
+				config to config
+				decision to decision
+				credits to credits
+				history to history
+				events to events
+		}
+	}
+
+	component def TicketingServiceCP {
+		ports :
+			orderApp : TicketOrderIPT ;
+			orderKiosk : TicketOrderIPT ;
+			checkRequest : TicketCheckRequestIPT ;
+			dispenseRequest : DispenseRequestIPT ;
+			lostReport : LostReportIPT ;
+			paymentResult : PaymentResultIPT ;
+			config : ConfigSnapshotIPT ;
+			orderResultApp : TicketOrderResultOPT ;
+			orderResultKiosk : TicketOrderResultOPT ;
+			checkResult : TicketCheckResultOPT ;
+			dispenseDecision : DispenseDecisionOPT ;
+			transfer : CredentialTransferOPT ;
+			paymentRequest : PaymentRequestOPT ;
+			notification : NotificationRequestOPT ;
+			events : DomainEventOPT ;
+	}
+	component def MonitoringServiceCP {
+		ports :
+			occupancy : OccupancyStateIPT ;
+			accessEvents : AccessEventIPT ;
+			priorityEvents : DomainEventIPT ;
+			ticketEvents : DomainEventIPT ;
+			command : AuthorizedCommandIPT ;
+			dashboard : DashboardViewOPT ;
+			notification : NotificationRequestOPT ;
+	}
+	component def ConfigurationServiceCP {
+		ports :
+			command : AuthorizedCommandIPT ;
+			config : ConfigSnapshotOPT ;
+			result : AdminResultOPT ;
+	}
+	component def IdentityAccessCP {
+		ports :
+			request : AdminRequestIPT ;
+			session : SessionOPT ;
+			command : AuthorizedCommandOPT ;
+			events : DomainEventOPT ;
+	}
+	component def AuditLogCP {
+		ports :
+			ticketEvents : DomainEventIPT ;
+			adminEvents : DomainEventIPT ;
+	}
+	component def PaymentGatewayAdapterCP {
+		ports :
+			ticketRequest : PaymentRequestIPT ;
+			reply : GatewayReplyIPT ;
+			ticketResult : PaymentResultOPT ;
+			call : GatewayCallOPT ;
+	}
+	component def NotificationAdapterCP {
+		ports :
+			fromMonitoring : NotificationRequestIPT ;
+			fromTicketing : NotificationRequestIPT ;
+			call : NotificationCallOPT ;
+	}
+
+	component def ParkAccessSubsystemCP {
+		ports :
+			deviceRead : DeviceReadIPT ;
+			deviceCommand : DeviceCommandOPT ;
+			config : ConfigSnapshotIPT ;
+			ticketQuery : TicketCheckRequestOPT ;
+			ticketResult : TicketCheckResultIPT ;
+			accessEvent : AccessEventOPT ;
+			occupancy : OccupancyStateOPT ;
+		configuration {
+			components :
+				turnstileAd : DeviceAdapterCP { using ports : deviceRead : DeviceReadIPT ; turnstileAd_decision : DecisionIPT ; turnstileAd_config : ConfigSnapshotIPT ; deviceCommand : DeviceCommandOPT ; readEvent : ReadEventOPT ; }
+				accessCtl : AccessControlCP { using ports : attempt : ReadEventIPT ; ticketResult : TicketCheckResultIPT ; accessCtl_config : ConfigSnapshotIPT ; accessCtl_decision : DecisionOPT ; ticketQuery : TicketCheckRequestOPT ; accessEvent : AccessEventOPT ; occupancy : OccupancyStateOPT ; }
+			connectors :
+				k1 : ReadEventCN bindings readEvent = attempt ;
+				k2 : DecisionCN bindings accessCtl_decision = turnstileAd_decision ;
+			delegations :
+				deviceRead to deviceRead
+				deviceCommand to deviceCommand
+				accessCtl_config to config
+				turnstileAd_config to config
+				ticketQuery to ticketQuery
+				ticketResult to ticketResult
+				accessEvent to accessEvent
+				occupancy to occupancy
+		}
+	}
+	component def PriorityQueueSubsystemCP {
+		ports :
+			pgateAd_deviceRead : DeviceReadIPT ;
+			creaderAd_deviceRead : DeviceReadIPT ;
+			deviceCommand : DeviceCommandOPT ;
+			config : ConfigSnapshotIPT ;
+			accessEvent : AccessEventIPT ;
+			credits : CreditsViewOPT ;
+			history : VisitHistoryOPT ;
+			events : DomainEventOPT ;
+			transfer : CredentialTransferIPT ;
+		configuration {
+			components :
+				pgateAd : DeviceAdapterCP { using ports : pgateAd_deviceRead : DeviceReadIPT ; pgateAd_decision : DecisionIPT ; pgateAd_config : ConfigSnapshotIPT ; deviceCommand : DeviceCommandOPT ; pgateAd_readEvent : ReadEventOPT ; }
+				creaderAd : ReadOnlyAdapterCP { using ports : creaderAd_deviceRead : DeviceReadIPT ; creaderAd_config : ConfigSnapshotIPT ; creaderAd_readEvent : ReadEventOPT ; }
+				priorityQ : PriorityQueueCP { using ports : gateRead : ReadEventIPT ; visitRead : ReadEventIPT ; accessEvent : AccessEventIPT ; transfer : CredentialTransferIPT ; priorityQ_config : ConfigSnapshotIPT ; priorityQ_decision : DecisionOPT ; credits : CreditsViewOPT ; history : VisitHistoryOPT ; events : DomainEventOPT ; }
+			connectors :
+				k1 : ReadEventCN bindings pgateAd_readEvent = gateRead ;
+				k2 : ReadEventCN bindings creaderAd_readEvent = visitRead ;
+				k3 : DecisionCN bindings priorityQ_decision = pgateAd_decision ;
+			delegations :
+				pgateAd_deviceRead to pgateAd_deviceRead
+				creaderAd_deviceRead to creaderAd_deviceRead
+				deviceCommand to deviceCommand
+				priorityQ_config to config
+				pgateAd_config to config
+				creaderAd_config to config
+				accessEvent to accessEvent
+				credits to credits
+				history to history
+				events to events
+				transfer to transfer
+		}
+	}
+	component def TicketingSubsystemCP {
+		ports :
+			config : ConfigSnapshotIPT ;
+			checkRequest : TicketCheckRequestIPT ;
+			checkResult : TicketCheckResultOPT ;
+			orderApp : TicketOrderIPT ;
+			orderKiosk : TicketOrderIPT ;
+			orderResultApp : TicketOrderResultOPT ;
+			orderResultKiosk : TicketOrderResultOPT ;
+			dispenseRequest : DispenseRequestIPT ;
+			dispenseDecision : DispenseDecisionOPT ;
+			lostReport : LostReportIPT ;
+			transfer : CredentialTransferOPT ;
+			notification : NotificationRequestOPT ;
+			events : DomainEventOPT ;
+			call : GatewayCallOPT ;
+			reply : GatewayReplyIPT ;
+		configuration {
+			components :
+				ticketing : TicketingServiceCP { using ports : orderApp : TicketOrderIPT ; orderKiosk : TicketOrderIPT ; checkRequest : TicketCheckRequestIPT ; dispenseRequest : DispenseRequestIPT ; lostReport : LostReportIPT ; paymentResult : PaymentResultIPT ; config : ConfigSnapshotIPT ; orderResultApp : TicketOrderResultOPT ; orderResultKiosk : TicketOrderResultOPT ; checkResult : TicketCheckResultOPT ; dispenseDecision : DispenseDecisionOPT ; transfer : CredentialTransferOPT ; paymentRequest : PaymentRequestOPT ; notification : NotificationRequestOPT ; events : DomainEventOPT ; }
+				payAd : PaymentGatewayAdapterCP { using ports : ticketRequest : PaymentRequestIPT ; reply : GatewayReplyIPT ; ticketResult : PaymentResultOPT ; call : GatewayCallOPT ; }
+			connectors :
+				k1 : PaymentRequestCN bindings paymentRequest = ticketRequest ;
+				k2 : PaymentResultCN bindings ticketResult = paymentResult ;
+			delegations :
+				config to config
+				checkRequest to checkRequest
+				checkResult to checkResult
+				orderApp to orderApp
+				orderKiosk to orderKiosk
+				orderResultApp to orderResultApp
+				orderResultKiosk to orderResultKiosk
+				dispenseRequest to dispenseRequest
+				dispenseDecision to dispenseDecision
+				lostReport to lostReport
+				transfer to transfer
+				notification to notification
+				events to events
+				call to call
+				reply to reply
+		}
+	}
+	component def OperationsSubsystemCP {
+		ports :
+			config : ConfigSnapshotOPT ;
+			accessEvents : AccessEventIPT ;
+			occupancy : OccupancyStateIPT ;
+			priorityEvents : DomainEventIPT ;
+			fromTicketing : NotificationRequestIPT ;
+			ticketEvents : DomainEventIPT ;
+			request : AdminRequestIPT ;
+			session : SessionOPT ;
+			result : AdminResultOPT ;
+			dashboard : DashboardViewOPT ;
+			call : NotificationCallOPT ;
+		configuration {
+			components :
+				monitoring : MonitoringServiceCP { using ports : occupancy : OccupancyStateIPT ; accessEvents : AccessEventIPT ; priorityEvents : DomainEventIPT ; monitoring_ticketEvents : DomainEventIPT ; monitoring_command : AuthorizedCommandIPT ; dashboard : DashboardViewOPT ; notification : NotificationRequestOPT ; }
+				cfgSvc : ConfigurationServiceCP { using ports : cfgSvc_command : AuthorizedCommandIPT ; config : ConfigSnapshotOPT ; result : AdminResultOPT ; }
+				iam : IdentityAccessCP { using ports : request : AdminRequestIPT ; session : SessionOPT ; iam_command : AuthorizedCommandOPT ; events : DomainEventOPT ; }
+				auditLog : AuditLogCP { using ports : auditLog_ticketEvents : DomainEventIPT ; adminEvents : DomainEventIPT ; }
+				notifAd : NotificationAdapterCP { using ports : fromMonitoring : NotificationRequestIPT ; fromTicketing : NotificationRequestIPT ; call : NotificationCallOPT ; }
+			connectors :
+				k1 : AuthorizedCommandCN bindings iam_command = cfgSvc_command ;
+				k2 : AuthorizedCommandCN bindings iam_command = monitoring_command ;
+				k3 : DomainEventCN bindings events = adminEvents ;
+				k4 : NotificationRequestCN bindings notification = fromMonitoring ;
+			delegations :
+				config to config
+				accessEvents to accessEvents
+				occupancy to occupancy
+				priorityEvents to priorityEvents
+				fromTicketing to fromTicketing
+				monitoring_ticketEvents to ticketEvents
+				auditLog_ticketEvents to ticketEvents
+				request to request
+				session to session
+				result to result
+				dashboard to dashboard
+				call to call
+		}
+	}
+
+	component def ParkControlCP {
+		ports :
+		configuration {
+			components :
+				wb : WristbandCP [1, 50000] { using ports : credential : CredentialOPT ; }
+				app : VisitorAppCP { using ports : app_qr : CredentialOPT ; app_order : TicketOrderOPT ; app_lostReport : LostReportOPT ; app_orderResult : TicketOrderResultIPT ; app_credits : CreditsViewIPT ; app_history : VisitHistoryIPT ; }
+				kiosk : DispenserKioskCP [1, 20] { using ports : kiosk_qr : CredentialIPT ; kiosk_orderResult : TicketOrderResultIPT ; kiosk_dispenseDecision : DispenseDecisionIPT ; kiosk_order : TicketOrderOPT ; kiosk_dispenseRequest : DispenseRequestOPT ; }
+				turnstile : TurnstileCP [1, 50] { using ports : turnstile_rfid : CredentialIPT ; turnstile_qr : CredentialIPT ; turnstile_command : DeviceCommandIPT ; turnstile_read : DeviceReadOPT ; }
+				pgate : PriorityGateCP [1, 100] { using ports : pgate_rfid : CredentialIPT ; pgate_qr : CredentialIPT ; pgate_command : DeviceCommandIPT ; pgate_read : DeviceReadOPT ; }
+				creader : CommonQueueReaderCP [0, 100] { using ports : creader_rfid : CredentialIPT ; creader_read : DeviceReadOPT ; }
+				console : BackofficeConsoleCP { using ports : console_request : AdminRequestOPT ; console_session : SessionIPT ; console_dashboard : DashboardViewIPT ; configResult : AdminResultIPT ; }
+				gateway : PaymentGatewayCP { using ports : gateway_call : GatewayCallIPT ; gateway_reply : GatewayReplyOPT ; }
+				notifier : NotificationServiceCP { using ports : notifier_call : NotificationCallIPT ; }
+				accessSub : ParkAccessSubsystemCP { using ports : deviceRead : DeviceReadIPT ; accessSub_deviceCommand : DeviceCommandOPT ; accessSub_config : ConfigSnapshotIPT ; ticketQuery : TicketCheckRequestOPT ; ticketResult : TicketCheckResultIPT ; accessSub_accessEvent : AccessEventOPT ; accessSub_occupancy : OccupancyStateOPT ; }
+				queueSub : PriorityQueueSubsystemCP { using ports : pgateAd_deviceRead : DeviceReadIPT ; creaderAd_deviceRead : DeviceReadIPT ; queueSub_deviceCommand : DeviceCommandOPT ; queueSub_config : ConfigSnapshotIPT ; queueSub_accessEvent : AccessEventIPT ; queueSub_credits : CreditsViewOPT ; queueSub_history : VisitHistoryOPT ; queueSub_events : DomainEventOPT ; queueSub_transfer : CredentialTransferIPT ; }
+				ticketSub : TicketingSubsystemCP { using ports : ticketSub_config : ConfigSnapshotIPT ; checkRequest : TicketCheckRequestIPT ; checkResult : TicketCheckResultOPT ; orderApp : TicketOrderIPT ; orderKiosk : TicketOrderIPT ; orderResultApp : TicketOrderResultOPT ; orderResultKiosk : TicketOrderResultOPT ; ticketSub_dispenseRequest : DispenseRequestIPT ; ticketSub_dispenseDecision : DispenseDecisionOPT ; ticketSub_lostReport : LostReportIPT ; ticketSub_transfer : CredentialTransferOPT ; notification : NotificationRequestOPT ; ticketSub_events : DomainEventOPT ; ticketSub_call : GatewayCallOPT ; ticketSub_reply : GatewayReplyIPT ; }
+				opsSub : OperationsSubsystemCP { using ports : opsSub_config : ConfigSnapshotOPT ; accessEvents : AccessEventIPT ; opsSub_occupancy : OccupancyStateIPT ; priorityEvents : DomainEventIPT ; fromTicketing : NotificationRequestIPT ; ticketEvents : DomainEventIPT ; opsSub_request : AdminRequestIPT ; opsSub_session : SessionOPT ; result : AdminResultOPT ; opsSub_dashboard : DashboardViewOPT ; opsSub_call : NotificationCallOPT ; }
+			connectors :
+				c1 : CredentialCN bindings credential = turnstile_rfid ;
+				c2 : CredentialCN bindings credential = pgate_rfid ;
+				c3 : CredentialCN bindings credential = creader_rfid ;
+				c4 : CredentialCN bindings app_qr = turnstile_qr ;
+				c5 : CredentialCN bindings app_qr = pgate_qr ;
+				c6 : CredentialCN bindings app_qr = kiosk_qr ;
+				c7 : DeviceReadCN bindings turnstile_read = deviceRead ;
+				c8 : DeviceReadCN bindings pgate_read = pgateAd_deviceRead ;
+				c9 : DeviceReadCN bindings creader_read = creaderAd_deviceRead ;
+				c10 : DeviceCommandCN bindings accessSub_deviceCommand = turnstile_command ;
+				c11 : DeviceCommandCN bindings queueSub_deviceCommand = pgate_command ;
+				c12 : ConfigSnapshotCN bindings opsSub_config = accessSub_config ;
+				c13 : ConfigSnapshotCN bindings opsSub_config = queueSub_config ;
+				c14 : ConfigSnapshotCN bindings opsSub_config = ticketSub_config ;
+				c15 : TicketCheckRequestCN bindings ticketQuery = checkRequest ;
+				c16 : TicketCheckResultCN bindings checkResult = ticketResult ;
+				c17 : AccessEventCN bindings accessSub_accessEvent = queueSub_accessEvent ;
+				c18 : AccessEventCN bindings accessSub_accessEvent = accessEvents ;
+				c19 : OccupancyStateCN bindings accessSub_occupancy = opsSub_occupancy ;
+				c20 : CreditsViewCN bindings queueSub_credits = app_credits ;
+				c21 : VisitHistoryCN bindings queueSub_history = app_history ;
+				c22 : DomainEventCN bindings queueSub_events = priorityEvents ;
+				c23 : TicketOrderCN bindings app_order = orderApp ;
+				c24 : TicketOrderCN bindings kiosk_order = orderKiosk ;
+				c25 : TicketOrderResultCN bindings orderResultApp = app_orderResult ;
+				c26 : TicketOrderResultCN bindings orderResultKiosk = kiosk_orderResult ;
+				c27 : DispenseRequestCN bindings kiosk_dispenseRequest = ticketSub_dispenseRequest ;
+				c28 : DispenseDecisionCN bindings ticketSub_dispenseDecision = kiosk_dispenseDecision ;
+				c29 : LostReportCN bindings app_lostReport = ticketSub_lostReport ;
+				c30 : CredentialTransferCN bindings ticketSub_transfer = queueSub_transfer ;
+				c31 : NotificationRequestCN bindings notification = fromTicketing ;
+				c32 : DomainEventCN bindings ticketSub_events = ticketEvents ;
+				c33 : GatewayCallCN bindings ticketSub_call = gateway_call ;
+				c34 : GatewayReplyCN bindings gateway_reply = ticketSub_reply ;
+				c35 : AdminRequestCN bindings console_request = opsSub_request ;
+				c36 : SessionCN bindings opsSub_session = console_session ;
+				c37 : AdminResultCN bindings result = configResult ;
+				c38 : DashboardViewCN bindings opsSub_dashboard = console_dashboard ;
+				c39 : NotificationCallCN bindings opsSub_call = notifier_call ;
+		}
+	}
+}
+
 
 
 Requirement ParkAccessControl ( 1 ) {
   text = "FR1 - The system shall control visitor entry to and exit from the park."
+  satisfied by ParkControl.componentdefs.AccessControlCP ;
 
   Requirement UnlockTurnstileWithValidTicket ( 1.1 ) {
     text = "FR1.1 - The system shall unlock the entry turnstile only if the identifier is associated with a ticket valid for the current date and time."
+    satisfied by ParkControl.componentdefs.AccessDecisionCP ;
   }
   Requirement BlockEntryAtCapacity ( 1.2 ) {
     text = "FR1.2 - The system shall block new entries when park occupancy reaches the configured limit, allowing them again when occupancy drops below 95% of the limit."
+    satisfied by ParkControl.componentdefs.OccupancyControllerCP ;
   }
   Requirement RecordEntryExitAndOccupancy ( 1.3 ) {
     text = "FR1.3 - The system shall record every entry and exit, keeping a real-time occupancy count."
+    satisfied by ParkControl.componentdefs.OccupancyControllerCP ;
   }
   Requirement AntiPassback ( 1.4 ) {
     text = "FR1.4 - The system shall prevent the same identifier from being used to enter twice without a recorded exit (anti-passback)."
+    satisfied by ParkControl.componentdefs.AccessDecisionCP ;
   }
 }
 
@@ -36,216 +686,115 @@ Requirement TicketsAndIdentifiers ( 2 ) {
 
   Requirement TicketPurchase ( 2.1 ) {
     text = "FR2.1 - The system shall allow tickets to be purchased through the app and, alternatively, at the dispenser kiosk, with configurable types (daily, half-price, annual pass, VIP), each with its own number of priority queue credits."
+    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
   Requirement TicketIdentifierBinding ( 2.2 ) {
     text = "FR2.2 - The system shall bind each ticket to an identifier (passive RFID/NFC wristband or QR code in the app)."
+    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
-  Requirement BirthDateRecord ( 2.3 ) {
-    text = "FR2.3 - The system shall record the visitor's date of birth in their profile, used for purchase restrictions."
-    derive PaymentsAndPurchases.AlcoholBlockForMinors ;
+  Requirement BlockAndTransferViaDispenser ( 2.3 ) {
+    text = "FR2.3 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the ticket, remaining priority queue credits and in-park presence status (so that anti-passback is not violated)."
+    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
   }
-  Requirement MinorGuardianLink ( 2.4 ) {
-    text = "FR2.4 - The system shall allow minors' wristbands to be linked to a guardian."
+  Requirement WristbandDispensing ( 2.4 ) {
+    text = "FR2.4 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.3), binding the wristband to that ticket."
+    satisfied by ParkControl.componentdefs.DispenserKioskCP ;
   }
-  Requirement BlockAndTransferViaDispenser ( 2.5 ) {
-    text = "FR2.5 - The system shall allow the visitor to block a lost identifier through the app and collect a new wristband at the dispenser, transferring the same items listed in FR2.7."
+  Requirement BlockedWristbandRejection ( 2.5 ) {
+    text = "FR2.5 - Turnstiles and priority gates shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
+    satisfied by ParkControl.componentdefs.TicketingServiceCP ;
+    derive TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
   }
-  Requirement WristbandDispensing ( 2.6 ) {
-    text = "FR2.6 - The dispenser kiosk shall release a wristband only after reading the QR code of a paid, not yet collected ticket, or of a replacement requested through the app (FR2.5), binding the wristband to that ticket."
-  }
-  
-  Requirement AssistedWristbandReplacement ( 2.7 ) {
-    text = "FR2.7 - The system shall allow an authenticated attendant to block a lost wristband and encode a new one for the visitor, after confirming their identity through the app or a photo ID, transferring the ticket, remaining priority queue credits, balance, linked card, rented locker, guardian links and in-park presence status (so that anti-passback is not violated)."
-  }
-  Requirement BlockedWristbandRejection ( 2.8 ) {
-    text = "FR2.8 - Turnstiles, gates, lockers and points of sale shall reject a blocked identifier; offline devices shall start rejecting it as soon as they receive the block list during synchronization."
-    derive TicketsAndIdentifiers.AssistedWristbandReplacement, TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
-  }
-  Requirement ReplacementRecord ( 2.9 ) {
-    text = "FR2.9 - The system shall record every wristband replacement with the responsible attendant, timestamp, old and new identifiers and the transferred items."
+  Requirement ReplacementRecord ( 2.6 ) {
+    text = "FR2.6 - The system shall record every wristband replacement with timestamp, old and new identifiers and the transferred items."
+    satisfied by ParkControl.componentdefs.AuditLogCP ;
+    derive TicketsAndIdentifiers.BlockAndTransferViaDispenser ;
   }
 }
 
 Requirement PriorityQueuesAndAttractionLog ( 3 ) {
   text = "FR3 - The system shall control priority queues and record visited attractions."
+  satisfied by ParkControl.componentdefs.PriorityQueueCP ;
 
   Requirement CreditsPerTicketType ( 3.1 ) {
     text = "FR3.1 - Each ticket type shall define a number of priority queue credits per day (e.g., 5), available on the identifier from park entry onwards."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
   }
   Requirement PriorityGateWithCredit ( 3.2 ) {
     text = "FR3.2 - The priority queue gate shall allow passage only if the identifier has at least one credit available for the day."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
   }
   Requirement CreditDebit ( 3.3 ) {
     text = "FR3.3 - When allowing passage, the system shall debit one priority queue credit."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
   }
   Requirement DuplicateReadSuppression ( 3.4 ) {
     text = "FR3.4 - The system shall ignore a new read of the same identifier at the same gate for 1 minute, avoiding double debits."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
     derive PriorityQueuesAndAttractionLog.CreditDebit ;
   }
   Requirement CreditExpiration ( 3.5 ) {
     text = "FR3.5 - Unused credits shall expire at the end of the day."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
   }
   Requirement RemainingCreditsDisplay ( 3.6 ) {
     text = "FR3.6 - The system shall display at the gate and in the app how many credits the visitor has left."
+    satisfied by ParkControl.componentdefs.CreditManagerCP ;
   }
   Requirement RegularQueueLog ( 3.7 ) {
     text = "FR3.7 - Where there is a reader in the regular queue, the system shall record the visited attraction without blocking access."
+    satisfied by ParkControl.componentdefs.VisitLogCP ;
   }
   Requirement AttractionHistory ( 3.8 ) {
     text = "FR3.8 - The system shall show in the app the history of attractions visited during the day, in both regular and priority queues."
+    satisfied by ParkControl.componentdefs.VisitLogCP ;
   }
 }
 
-Requirement PaymentsAndPurchases ( 4 ) {
-  text = "FR4 - The system shall manage the digital wallet and wristband payments."
+Requirement MonitoringConfigurationReports ( 4 ) {
+  text = "FR4 - The system shall provide operational monitoring, configuration and reports."
 
-  Requirement BalanceTopUp ( 4.1 ) {
-    text = "FR4.1 - The system shall allow the prepaid wristband balance to be topped up through the app, via Pix, debit or credit."
+  Requirement OperationsDashboard ( 4.1 ) {
+    text = "FR4.1 - The system shall display a dashboard with occupancy, priority queue usage and alarms in real time."
+    satisfied by ParkControl.componentdefs.MonitoringServiceCP ;
   }
-  Requirement CardLinking ( 4.2 ) {
-    text = "FR4.2 - The system shall allow a credit or debit card to be linked through the app, tokenized by the gateway, so that the wristband works as a contactless payment method."
+  Requirement AttractionAndReaderSetup ( 4.2 ) {
+    text = "FR4.2 - The system shall allow attractions and their readers (priority gate and optional regular queue reader) to be registered."
+    satisfied by ParkControl.componentdefs.ConfigurationServiceCP ;
   }
-  Requirement PointOfSaleCharge ( 4.3 ) {
-    text = "FR4.3 - At the point of sale, the system shall debit the prepaid balance or charge the linked card, refusing the purchase if there is not enough balance or no card authorization."
+  Requirement ParkConfiguration ( 4.3 ) {
+    text = "FR4.3 - The system shall allow ticket types, priority queue credits, fees, opening hours and maximum occupancy to be configured."
+    satisfied by ParkControl.componentdefs.ConfigurationServiceCP ;
   }
-  Requirement AlcoholBlockForMinors ( 4.4 ) {
-    text = "FR4.4 - The system shall block the sale of alcoholic beverages to identifiers of visitors under 18."
-  }
-  Requirement BalanceRefund ( 4.5 ) {
-    text = "FR4.5 - The system shall allow the remaining prepaid balance to be refunded through the app when leaving the park."
-  }
-  Requirement MinorSpendingLimit ( 4.6 ) {
-    text = "FR4.6 - The system shall allow the guardian to set a spending limit for the wristbands of linked minors."
+  Requirement Reports ( 4.4 ) {
+    text = "FR4.4 - The system shall generate reports on visitors, ticket sales, most visited attractions, priority queue usage and incidents per period."
+    satisfied by ParkControl.componentdefs.MonitoringServiceCP ;
   }
 }
 
-Requirement Lockers ( 5 ) {
-  text = "FR5 - The system shall manage locker rental and opening."
+Requirement Quality ( 5 ) {
+  text = "NFR - The system shall satisfy performance, fault tolerance, scalability, modifiability, security and traceability concerns."
 
-  Requirement LockerRental ( 5.1 ) {
-    text = "FR5.1 - The system shall allow a locker to be rented through the app (choosing size and area), binding it to the ticket's own wristband and charging the wallet."
+  Requirement AccessDecisionTime ( 5.1 ) {
+    text = "NFR1 - Performance: the decision to unlock or keep locked a turnstile or priority gate shall be made within 500 ms after the identifier is read."
+    satisfied by ParkControl.componentdefs.DeviceAdapterCP ;
   }
-  Requirement UnlockWithBoundIdentifier ( 5.2 ) {
-    text = "FR5.2 - The system shall unlock the locker only when reading the identifier bound to it."
+  Requirement OfflineOperation ( 5.2 ) {
+    text = "NFR2 - Fault tolerance: turnstiles and priority gates shall keep operating with local rules when the connection to the central server is lost, synchronizing their records upon reconnection."
+    satisfied by ParkControl.componentdefs.DeviceAdapterCP ;
   }
-  Requirement UnlimitedOpenings ( 5.3 ) {
-    text = "FR5.3 - The system shall allow unlimited locker openings during the rental period."
+  Requirement ScaleByInstances ( 5.3 ) {
+    text = "NFR3 - Scalability: the same architecture shall serve from a small park to a theme park (at least 200 identifier readers and 100 attractions) by changing only the number of device and service instances, without changing components."
   }
-  Requirement RentalTermination ( 5.4 ) {
-    text = "FR5.4 - The system shall end the rental when the visitor releases the locker in the app, unbinding the identifier."
+  Requirement IntegrationThroughAdapters ( 5.4 ) {
+    text = "NFR4 - Modifiability: a new device (turnstile or reader from another manufacturer) or a new external service shall be integrated by creating or replacing an adapter, without changing the other components."
+    satisfied by ParkControl.componentdefs.DeviceAdapterCP, ParkControl.componentdefs.PaymentGatewayAdapterCP , ParkControl.componentdefs.NotificationAdapterCP ; }
+  Requirement RoleBasedAccess ( 5.5 ) {
+    text = "NFR5 - Security: administrative functions shall require authentication and role-based authorization (manager, operator)."
+    satisfied by ParkControl.componentdefs.IdentityAccessCP ;
   }
-  Requirement LockerWarningAtExit ( 5.5 ) {
-    text = "FR5.5 - When recording the exit of a visitor whose locker is still bound, the turnstile shall warn them and ask for confirmation before allowing the exit."
-  }
-  Requirement AssistedOpening ( 5.6 ) {
-    text = "FR5.6 - The system shall allow an assisted opening by an authenticated attendant, recording the event, when the identifier is lost or blocked."
-  }
-  Requirement LockerAvailability ( 5.7 ) {
-    text = "FR5.7 - The system shall display locker availability by area and size in the app."
-  }
-}
-
-Requirement MonitoringConfigurationReports ( 6 ) {
-  text = "FR6 - The system shall provide operational monitoring, configuration and reports."
-
-  Requirement OperationsDashboard ( 6.1 ) {
-    text = "FR6.1 - The system shall display a dashboard with occupancy, priority queue usage, lockers and alarms in real time."
-  }
-  Requirement AttractionAndReaderSetup ( 6.2 ) {
-    text = "FR6.2 - The system shall allow attractions and their readers (priority gate and optional regular queue reader) to be registered."
-  }
-  Requirement ParkConfiguration ( 6.3 ) {
-    text = "FR6.3 - The system shall allow ticket types, priority queue credits, fees, opening hours, maximum occupancy and lockers to be configured."
-  }
-  Requirement Reports ( 6.4 ) {
-    text = "FR6.4 - The system shall generate reports on visitors, sales, most visited attractions, priority queue usage, locker usage and incidents per period."
-  }
-}
-
-Requirement Performance ( 7 ) {
-  text = "NFR1 - Performance requirements."
-
-  Requirement AccessDecisionTime ( 7.1 ) {
-    text = "NFR1.1 - The decision to unlock or keep locked a turnstile, priority gate or locker shall be made within 500 ms after the identifier is read."
-  }
-  Requirement PurchaseTime ( 7.2 ) {
-    text = "NFR1.2 - A point-of-sale purchase, including linked card authorization, shall be completed within 2 s."
-  }
-}
-
-Requirement Availability ( 8 ) {
-  text = "NFR2 - Availability and fault tolerance requirements."
-
-  Requirement ServiceAvailability ( 8.1 ) {
-    text = "NFR2.1 - The access, priority queue, wallet and app services shall have 99.9% availability during opening hours."
-  }
-  Requirement OfflineOperation ( 8.2 ) {
-    text = "NFR2.2 - Turnstiles, gates, lockers and points of sale shall keep operating for up to 4 h without a connection to the central server, synchronizing records upon reconnection. While offline, points of sale accept only prepaid balance."
-  }
-}
-
-Requirement Scalability ( 9 ) {
-  text = "NFR3 - Scalability requirements."
-
-  Requirement ConcurrentVisitors ( 9.1 ) {
-    text = "NFR3.1 - The system shall support 500 to 50,000 concurrent visitors per park just by adding service instances, without code changes."
-  }
-  Requirement DeviceCapacity ( 9.2 ) {
-    text = "NFR3.2 - The system shall support at least 200 identifier readers, 100 attractions and 2,000 lockers per park."
-  }
-}
-
-Requirement Modifiability ( 10 ) {
-  text = "NFR4 - Modifiability and configurability requirements."
-
-  Requirement NewDeviceThroughAdapter ( 10.1 ) {
-    text = "NFR4.1 - A new device type (turnstile, reader or lock from another manufacturer) shall be integrated by creating an adapter, without changing the other components."
-  }
-  Requirement NewPaymentOrIdentifierType ( 10.2 ) {
-    text = "NFR4.2 - A new payment method or identifier type shall be added without changing the access and purchase core."
-  }
-  Requirement ProfilesThroughConfiguration ( 10.3 ) {
-    text = "NFR4.3 - The installation profiles of section 3.1 shall be obtained through configuration only."
-  }
-}
-
-Requirement Security ( 11 ) {
-  text = "NFR5 - Security and privacy requirements."
-
-  Requirement EncryptedCommunication ( 11.1 ) {
-    text = "NFR5.1 - All communication between devices and servers shall be encrypted (TLS 1.3 or equivalent) and devices shall be authenticated."
-  }
-  Requirement NoCardData ( 11.2 ) {
-    text = "NFR5.2 - The system shall not store card data: the linked card is tokenized by a PCI DSS certified gateway, and the wristband stores only an identifier."
-  }
-  Requirement RoleBasedAccess ( 11.3 ) {
-    text = "NFR5.3 - Access to administrative functions, assisted locker opening and wristband replacement shall require authentication and role-based access control (manager, operator, attendant)."
-  }
-  Requirement LGPDPrivacy ( 11.4 ) {
-    text = "NFR5.4 - Personal data, minors' data and attraction history shall comply with the LGPD: consent, data minimization and deletion when the purpose ends."
-  }
-}
-
-Requirement Traceability ( 12 ) {
-  text = "NFR6 - Traceability requirements."
-
-  Requirement ImmutableRecords ( 12.1 ) {
-    text = "NFR6.1 - Records of financial transactions, assisted openings and wristband replacements shall be immutable and kept for at least 5 years."
-  }
-}
-
-Requirement Portability ( 13 ) {
-  text = "NFR7 - Portability requirements."
-
-  Requirement ContainerExecution ( 13.1 ) {
-    text = "NFR7.1 - Services shall run in containers, on a local server or in a public cloud, without code changes."
-  }
-}
-
-Requirement Usability ( 14 ) {
-  text = "NFR8 - Usability requirements."
-
-  Requirement TwoTapLookup ( 14.1 ) {
-    text = "NFR8.1 - The visitor shall be able to see their balance, remaining priority queue credits and locker in the app in at most 2 taps."
+  Requirement AuditTrail ( 5.6 ) {
+    text = "NFR6 - Traceability: ticket sales and wristband replacements shall be recorded in an append-only audit log, which cannot be changed after writing."
+    satisfied by ParkControl.componentdefs.AuditLogCP ;
   }
 }
